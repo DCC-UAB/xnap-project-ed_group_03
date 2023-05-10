@@ -22,6 +22,7 @@ python main.py
 
 ## Contributors
 Albert Pumar - 1597973@uab.cat
+Miguel J Garrido - 1605542@uab.cat
 
 
 Xarxes Neuronals i Aprenentatge Profund
