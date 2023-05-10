@@ -21,7 +21,7 @@ python main.py
 
 
 ## Contributors
-Write here the name and UAB mail of the group members
+test 1
 
 Xarxes Neuronals i Aprenentatge Profund
 Grau de __Write here the name of your estudies (Artificial Intelligence, Data Engineering or Computational Mathematics & Data analyitics)__, 
