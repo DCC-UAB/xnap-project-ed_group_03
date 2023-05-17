@@ -8,7 +8,7 @@ import numpy as np
 import pickle
 
 batch_size = 128  # Batch size for training.
-epochs = 5  # Number of epochs to train for.
+epochs = 4  # Number of epochs to train for.
 latent_dim = 1024#256  # Latent dimensionality of the encoding space.
 num_samples = 145437  # Number of samples to train on.
 # Path to the data txt file on disk.
