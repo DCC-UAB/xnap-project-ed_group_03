@@ -25,7 +25,7 @@ Albert Pumar - 1597973@uab.cat
 Miguel J Garrido - 1605542@uab.cat
 Carlos Leta - 1599255@uab.cat
 
-
+test
 Xarxes Neuronals i Aprenentatge Profund
 Grau de Data Engineering, 
 UAB, 2023
