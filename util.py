@@ -6,22 +6,35 @@ from keras.models import load_model
 from keras.callbacks import TensorBoard
 import numpy as np
 import pickle
+import os
 
 batch_size = 128  # Batch size for training.
 epochs = 4  # Number of epochs to train for.
 latent_dim = 1024#256  # Latent dimensionality of the encoding space.
 num_samples = 30000  # Number of samples to train on. 145437
 
-maquina = "Linux" #"Windows"
+#maquina = "Linux" #remoto 
+maquina = "Windows" #local Albert y Miguel
+maquina = "MAC"
 
 # Path to the data txt file on disk.
 data_path = 'cat-eng/cat.txt' # to replace by the actual dataset name
 encoder_path='encoder_modelPredTranslation.h5'
 decoder_path='decoder_modelPredTranslation.h5'
+
+### DESCOMENTAR TU USUARIO EN LOCAL ###
+usuario = "34606"
+#usuario = "apuma"
+#usuario = "carlosletaalfonso"
+
 if maquina == "Linux":
-    LOG_PATH="/home/alumne/xnap-project-ed_group_03/log"
-#else:
-    #LOG_PATH = r'C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\log'
+    LOG_PATH="/home/alumne/xnap-project-ed_group_03/log" #### remoto
+elif maquina == "Windows":
+    print("aaa")
+    LOG_PATH = os.path.join(r'C:\Users', usuario, r'github-classroom\DCC-UAB\xnap-project-ed_group_03\log') #### local 
+else:
+    LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
+
 
 def prepareData(data_path):
     input_characters,target_characters,input_texts,target_texts=extractChar(data_path)
