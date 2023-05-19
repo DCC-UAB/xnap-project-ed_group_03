@@ -21,7 +21,7 @@ decoder_path='decoder_modelPredTranslation.h5'
 if maquina == "Linux":
     LOG_PATH="/home/alumne/xnap-project-ed_group_03/log"
 #else:
-    #LOG_PATH = 'C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\log'
+    #LOG_PATH = r'C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\log'
 
 def prepareData(data_path):
     input_characters,target_characters,input_texts,target_texts=extractChar(data_path)
