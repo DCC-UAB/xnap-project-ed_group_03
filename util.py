@@ -15,7 +15,7 @@ num_samples = 30000  # Number of samples to train on. 145437
 
 #maquina = "Linux" #remoto 
 maquina = "Windows" #local Albert y Miguel
-maquina = "MAC"
+#maquina = "MAC"
 
 # Path to the data txt file on disk.
 data_path = 'cat-eng/cat.txt' # to replace by the actual dataset name
@@ -23,14 +23,13 @@ encoder_path='encoder_modelPredTranslation.h5'
 decoder_path='decoder_modelPredTranslation.h5'
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
-usuario = "34606"
-#usuario = "apuma"
+#usuario = "34606"
+usuario = "apuma"
 #usuario = "carlosletaalfonso"
 
 if maquina == "Linux":
     LOG_PATH="/home/alumne/xnap-project-ed_group_03/log" #### remoto
 elif maquina == "Windows":
-    print("aaa")
     LOG_PATH = os.path.join(r'C:\Users', usuario, r'github-classroom\DCC-UAB\xnap-project-ed_group_03\log') #### local 
 else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
@@ -161,10 +160,12 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
 # We load tensorboad
 # We train the model
     if maquina == "Linux":
-        LOG_PATH="/home/alumne/xnap-project-ed_group_03/output/log"
-    #else:
-        #LOG_PATH = "C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\output\log"
-    
+        LOG_PATH="/home/alumne/xnap-project-ed_group_03/output/log" #### remoto
+    elif maquina == "Windows":
+        LOG_PATH = os.path.join(r'C:\Users', usuario, r'github-classroom\DCC-UAB\xnap-project-ed_group_03\output\log') #### local 
+    else:
+        LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/log" #### local leta
+        
     tbCallBack = TensorBoard(log_dir=LOG_PATH, histogram_freq=0, write_graph=True, write_images=True)
     # Run training
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['accuracy'])

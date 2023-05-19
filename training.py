@@ -1,6 +1,14 @@
 from util import *
 
-maquina = "Linux"
+#maquina = "Linux" #remoto 
+maquina = "Windows" #local Albert y Miguel
+#maquina = "MAC"
+
+### DESCOMENTAR TU USUARIO EN LOCAL ###
+#usuario = "34606"
+usuario = "apuma"
+#usuario = "carlosletaalfonso"
+
 
 #load the data and format  them for being processed
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
@@ -16,11 +24,12 @@ encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(enc
 
 # we save the object to convert the sequence to encoding  and encoding to sequence
 # our model is made for being used with different langages that do not have the same number of letters and the same alphabet
+
 if maquina == "Linux":
-    filename="/"
-    saveChar2encoding("/home/alumne/xnap-project-ed_group_03/output/char2encoding.pkl",input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index)
+    filename="/home/alumne/xnap-project-ed_group_03/output/char2encoding.pkl" #### remoto
+elif maquina == "Windows":
+    filename = os.path.join(r'C:\Users', usuario, r'github-classroom\DCC-UAB\xnap-project-ed_group_03\output\char2encoding.pkl') #### local 
+else:
+    filename = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/char2encoding.pkl" #### local leta
 
-#else:
-#    saveChar2encoding("C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\output\char2encoding.pkl",input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index)
-
-
+saveChar2encoding(filename,input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index)
