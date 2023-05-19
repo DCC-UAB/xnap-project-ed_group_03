@@ -10,13 +10,18 @@ import pickle
 batch_size = 128  # Batch size for training.
 epochs = 4  # Number of epochs to train for.
 latent_dim = 1024#256  # Latent dimensionality of the encoding space.
-num_samples = 145437  # Number of samples to train on.
+num_samples = 30000  # Number of samples to train on. 145437
+
+maquina = "Linux" #"Windows"
+
 # Path to the data txt file on disk.
 data_path = 'cat-eng/cat.txt' # to replace by the actual dataset name
 encoder_path='encoder_modelPredTranslation.h5'
 decoder_path='decoder_modelPredTranslation.h5'
-LOG_PATH="log"
-
+if maquina == "Linux":
+    LOG_PATH="/home/alumne/xnap-project-ed_group_03/log"
+#else:
+    #LOG_PATH = 'C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\log'
 
 def prepareData(data_path):
     input_characters,target_characters,input_texts,target_texts=extractChar(data_path)
@@ -142,7 +147,10 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
 def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data):
 # We load tensorboad
 # We train the model
-    LOG_PATH="/output/log"
+    if maquina == "Linux":
+        LOG_PATH="/home/alumne/xnap-project-ed_group_03/output/log"
+    #else:
+        #LOG_PATH = "C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\output\log"
     
     tbCallBack = TensorBoard(log_dir=LOG_PATH, histogram_freq=0, write_graph=True, write_images=True)
     # Run training
