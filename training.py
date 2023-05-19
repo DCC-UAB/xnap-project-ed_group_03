@@ -1,5 +1,7 @@
 from util import *
 
+maquina = "Linux"
+
 #load the data and format  them for being processed
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
 
@@ -14,5 +16,11 @@ encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(enc
 
 # we save the object to convert the sequence to encoding  and encoding to sequence
 # our model is made for being used with different langages that do not have the same number of letters and the same alphabet
-saveChar2encoding("/output/char2encoding.pkl",input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index)
+if maquina == "Linux":
+    filename="/"
+    saveChar2encoding("/home/alumne/xnap-project-ed_group_03/output/char2encoding.pkl",input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index)
+
+#else:
+#    saveChar2encoding("C:\Users\apuma\github-classroom\DCC-UAB\xnap-project-ed_group_03\output\char2encoding.pkl",input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index)
+
 
