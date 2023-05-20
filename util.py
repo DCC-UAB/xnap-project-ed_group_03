@@ -7,6 +7,7 @@ from keras.callbacks import TensorBoard
 import numpy as np
 import pickle
 import os
+import wandb
 
 batch_size = 128  # Batch size for training.
 epochs = 4  # Number of epochs to train for.
@@ -166,14 +167,22 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     else:
         LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/log" #### local leta
         
-    tbCallBack = TensorBoard(log_dir=LOG_PATH, histogram_freq=0, write_graph=True, write_images=True)
+    # tbCallBack = TensorBoard(log_dir=LOG_PATH, histogram_freq=0, write_graph=True, write_images=True)
+
     # Run training
+    wandb.init(project="XNAP-PROJECT-ED_GROUP_03")
+    wandb_callback = wandb.keras.WandbCallback()
+    
+    wandb.config.batch_size = batch_size
+    wandb.config.epochs = epochs
+    wandb.config.validation_split = 0.01
+
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['accuracy'])
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch_size,
               epochs=epochs,
               validation_split=0.01,
-              callbacks = [tbCallBack])
+              callbacks = [wandb_callback])
     
 def generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense):
 # Once the model is trained, we connect the encoder/decoder and we create a new model
