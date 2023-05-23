@@ -96,7 +96,7 @@ def extractChar_batch(data_path, input_characters, target_characters,exchangeLan
     lines = open(data_path, encoding='utf-8').read().split('\n')
     print(str(len(lines) - 1))
 
-    num_samples = min(start_index + batch_size, len(lines) - 1)  # Calcular el número de muestras para este lote
+    num_samples = min(start_index + batch_size, len(lines) - 1) 
 
     if (exchangeLanguage == False):
         for line in lines[start_index:num_samples]:
@@ -185,7 +185,7 @@ def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_gru,decoder_dense
 	
 def modelTranslation(num_encoder_tokens,num_decoder_tokens):
-# We crete the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
+# We create the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
     encoder = LSTM(latent_dim, return_state=True)
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)

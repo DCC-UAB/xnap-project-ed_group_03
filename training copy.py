@@ -41,6 +41,4 @@ elif maquina == "Windows":
 else:
     filename = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/char2encoding.pkl" #### local leta
 
-print("aaaaaaaaaaaaaaa", num_encoder_tokens, num_decoder_tokens)
-
 saveChar2encoding(filename,input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index)
