@@ -44,13 +44,13 @@ def prepareData(data_path):
 
 def extractChar(data_path,exchangeLanguage=False):
     # We extract the data (Sentence1 \t Sentence 2) from the anki text file
-    input_texts = []
-    target_texts = []
-    input_characters = set()
-    target_characters = set()
+    input_texts = [] # seqüencies (frases) per traduir
+    target_texts = [] # seqüencies traduides
+    input_characters = set() # caracters o simbols únics de les seqüencies per traduir
+    target_characters = set() # caracters o simbols únics de les seqüencies traduides
     lines = open(data_path).read().split('\n')
     print(str(len(lines) - 1))
-    if (exchangeLanguage==False):
+    if (exchangeLanguage==False): # if true, intercanvia idioma d'entrada i destí
         for line in lines[: min(num_samples, len(lines) - 1)]:
             input_text, target_text = line.split('\t')[0], line.split('\t')[1]
             target_text = '\t' + target_text + '\n'
@@ -63,7 +63,7 @@ def extractChar(data_path,exchangeLanguage=False):
                 if char not in target_characters:
                     target_characters.add(char)
 
-        input_characters = sorted(list(input_characters))
+        input_characters = sorted(list(input_characters)) # ho passem a llista i ordenada
         target_characters = sorted(list(target_characters))
 
     else:
@@ -72,7 +72,7 @@ def extractChar(data_path,exchangeLanguage=False):
             target_text = '\t' + target_text + '\n'
             input_texts.append(input_text)
             target_texts.append(target_text)
-            for char in input_text:
+            for char in input_text: # agafo la seqüencia i separo caracter a caracter
                 if char not in input_characters:
                     input_characters.add(char)
             for char in target_text:
@@ -92,10 +92,10 @@ def encodingChar(input_characters,target_characters,input_texts,target_texts):
 # 2. We create a dictonary for both language
 # 3. We store their encoding and return them and their respective dictonary
     
-    num_encoder_tokens = len(input_characters)
-    num_decoder_tokens = len(target_characters)
-    max_encoder_seq_length = max([len(txt) for txt in input_texts])
-    max_decoder_seq_length = max([len(txt) for txt in target_texts])
+    num_encoder_tokens = len(input_characters) # numero total de caracters unics en les seqüencies de entrada (util per dimensio vocetor one hot, per representar cada caracter en seqüencies de entrada)
+    num_decoder_tokens = len(target_characters) # numero total de caracters unics en les seqüencies de sortida
+    max_encoder_seq_length = max([len(txt) for txt in input_texts]) # longitud de la seqüencia de entrada més llarga (pasos de temps tindra la xarxa)
+    max_decoder_seq_length = max([len(txt) for txt in target_texts]) # longitud de la seqüencia de sortida més llarga
     print('Number of num_encoder_tokens:', num_encoder_tokens)
     print('Number of samples:', len(input_texts))
     print('Number of unique input tokens:', num_encoder_tokens)
@@ -103,16 +103,16 @@ def encodingChar(input_characters,target_characters,input_texts,target_texts):
     print('Max sequence length for inputs:', max_encoder_seq_length)
     print('Max sequence length for outputs:', max_decoder_seq_length)
     
-    input_token_index = dict([(char, i) for i, char in enumerate(input_characters)])
-    target_token_index = dict([(char, i) for i, char in enumerate(target_characters)])
+    input_token_index = dict([(char, i) for i, char in enumerate(input_characters)]) # mapea cada caracter únic en la seqüencia d'entrada a un índex numeric únic
+    target_token_index = dict([(char, i) for i, char in enumerate(target_characters)]) # mapea cada caracter únic en la seqüencia de sortida a un índex numeric únic
 
-    encoder_input_data = np.zeros((len(input_texts), max_encoder_seq_length, num_encoder_tokens),dtype='float32')
-    decoder_input_data = np.zeros((len(input_texts), max_decoder_seq_length, num_decoder_tokens),dtype='float32')
-    decoder_target_data = np.zeros((len(input_texts), max_decoder_seq_length, num_decoder_tokens),dtype='float32')
+    encoder_input_data = np.zeros((len(input_texts), max_encoder_seq_length, num_encoder_tokens),dtype='float32') # matriu seqüencies entrada codificades (one hot). La matriu és: cada bloc una seqüencia, tantes files com seqüencia mes llarga, tantes columnes com total de caracters 
+    decoder_input_data = np.zeros((len(input_texts), max_decoder_seq_length, num_decoder_tokens),dtype='float32') # matriu seqüencies sortida codificades (one hot)
+    decoder_target_data = np.zeros((len(input_texts), max_decoder_seq_length, num_decoder_tokens),dtype='float32') # mateix que decoder_input_data pero desplaçada un cap cap endavant
 
     for i, (input_text, target_text) in enumerate(zip(input_texts, target_texts)):
         for t, char in enumerate(input_text):
-            encoder_input_data[i, t, input_token_index[char]] = 1.
+            encoder_input_data[i, t, input_token_index[char]] = 1. # assigna un 1 a les posiciones dels caracters, la resta de la fila tot 0
         for t, char in enumerate(target_text):
             decoder_input_data[i, t, target_token_index[char]] = 1.
             if t > 0:
@@ -124,15 +124,15 @@ def encodingChar(input_characters,target_characters,input_texts,target_texts):
 def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
 # We crete the model 1 encoder(gru) + 1 decode (gru) + 1 Dense layer + softmax
 
-    encoder_inputs = Input(shape=(None, num_encoder_tokens))
-    encoder = GRU(latent_dim, return_state=True)
-    encoder_outputs, state_h = encoder(encoder_inputs)
-    encoder_states = state_h
+    encoder_inputs = Input(shape=(None, num_encoder_tokens)) # entrada codificador
+    encoder = GRU(latent_dim, return_state=True) # codificador com a capa GRU
+    encoder_outputs, state_h = encoder(encoder_inputs) # obtenim sortida codificador i ultim estat intern
+    encoder_states = state_h # guardem estat intern per després usar en deco
 
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
     decoder_gru = GRU(latent_dim, return_sequences=True)
-    decoder_outputs = decoder_gru(decoder_inputs, initial_state=state_h)
-    decoder_dense = Dense(num_decoder_tokens, activation='softmax')
+    decoder_outputs = decoder_gru(decoder_inputs, initial_state=state_h) # estat inicial deco = ultim estat codificador
+    decoder_dense = Dense(num_decoder_tokens, activation='softmax') # definim capa densa (totalment conectada) i func. act. softmax
     decoder_outputs = decoder_dense(decoder_outputs)
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
     
@@ -178,6 +178,7 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb.config.validation_split = 0.01
 
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['accuracy'])
+    # entrenament del model. les seqúencies de entrada al codificador i al deco es pasan com a llista, i les seqüencies objectiu com a segon argument.
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch_size,
               epochs=epochs,
