@@ -1,21 +1,34 @@
 from util_copy import *
+import gc
+from keras.utils import Sequence
 
-class DataLoader:
-    def __init__(self, encoder_input_data, decoder_input_data, decoder_target_data, batch_size):
+class DataLoader(Sequence):
+    def __init__(self, encoder_input_data, decoder_input_data, decoder_target_data, block_size, batch_size):
         self.encoder_input_data = encoder_input_data
         self.decoder_input_data = decoder_input_data
         self.decoder_target_data = decoder_target_data
+        self.block_size = block_size
         self.batch_size = batch_size
 
-    def generate_batches(self):
-        num_batches = len(self.encoder_input_data) // self.batch_size
-        while True:
-            for i in range(num_batches):
-                start_index = i * self.batch_size
-                end_index = start_index + self.batch_size
-                yield ([self.encoder_input_data[start_index: end_index],
-                        self.decoder_input_data[start_index: end_index]],
-                        self.decoder_target_data[start_index: end_index])
+    def __len__(self):
+        return len(self.encoder_input_data) // (self.block_size * self.batch_size)
+
+    def __getitem__(self, index):
+        start_index = index * self.block_size * self.batch_size
+        end_index = (index + 1) * self.block_size * self.batch_size
+
+        encoder_input_block = self.encoder_input_data[start_index:end_index]
+        decoder_input_block = self.decoder_input_data[start_index:end_index]
+        decoder_target_block = self.decoder_target_data[start_index:end_index]
+
+        batches = []
+        for i in range(0, len(encoder_input_block), self.batch_size):
+            encoder_input_batch = encoder_input_block[i:i+self.batch_size]
+            decoder_input_batch = decoder_input_block[i:i+self.batch_size]
+            decoder_target_batch = decoder_target_block[i:i+self.batch_size]
+            batches.append(([encoder_input_batch, decoder_input_batch], decoder_target_batch))
+
+        return batches
 
 
 maquina = "Linux" #remoto 
@@ -24,7 +37,7 @@ maquina = "Linux" #remoto
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
 #usuario = "34606"
-#usuario = "apuma"
+usuario = "apuma"
 #usuario = "carlosletaalfonso"
 
 start_index = 0
@@ -37,33 +50,26 @@ model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,
 model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=['accuracy'])
 
 # DATA LOADER
-data_loader = DataLoader(encoder_input_data, decoder_input_data, decoder_target_data, batch_size)
+# data_sequence = DataLoader(encoder_input_data, decoder_input_data, decoder_target_data, batch_size, batch)
 
-# start_index += batch_size
+for epoch in range(10): # Fem 10 epochs, en cada epoch es llegeixen els 4 blocs
+    # del encoder_input_data, decoder_input_data, decoder_target_data
+    # gc.collect()
+    for step in range(4):
+        print("ÈPOCA:",epoch)
+        #load the data and format  them for being processed
+        print("LLEGIM NOU BLOC: DE",start_index,"FINS A", start_index+batch_size)
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
+        # we train it
+        print("ENTRENEM MODEL AMB DADES: DE",start_index,"FINS A", start_index+batch_size)
+        trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, epoch) # li passem l'epoch per a calcular el lr
 
-'''
-for i in range(40): # Fem 10 epochs, en cada epoch es llegeixen els 4 blocs
-    #load the data and format  them for being processed
-    encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
-    # we train it
-    trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, i) # li passem l'epoch per a calcular el lr
-    if start_index == 120000:
-        start_index = 0
-    else:
-        start_index += batch_size
-'''
-
-for i in range(40):
-    for batch in data_loader.generate_batches():
-        # Assuming that trainSeq2Seq can take a full batch as argument
-        encoder_input, decoder_input = batch[0]
-        decoder_target = batch[1]
-        trainSeq2Seq(model, encoder_input, decoder_input, decoder_target, i)
-
-    if start_index == 120000:
-        start_index = 0
-    else:
-        start_index += batch_size
+# for i in range(10):
+#     for batch in data_loader.generate_batches():
+#         # Assuming that trainSeq2Seq can take a full batch as argument
+#         encoder_input, decoder_input = batch[0]
+#         decoder_target = batch[1]
+#         trainSeq2Seq(model, encoder_input, decoder_input, decoder_target, i)
 
 # we build the final model for the inference (slightly different) and we save it
 encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense)
