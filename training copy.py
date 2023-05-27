@@ -1,12 +1,30 @@
 from util_copy import *
 
+class DataLoader:
+    def __init__(self, encoder_input_data, decoder_input_data, decoder_target_data, batch_size):
+        self.encoder_input_data = encoder_input_data
+        self.decoder_input_data = decoder_input_data
+        self.decoder_target_data = decoder_target_data
+        self.batch_size = batch_size
+
+    def generate_batches(self):
+        num_batches = len(self.encoder_input_data) // self.batch_size
+        while True:
+            for i in range(num_batches):
+                start_index = i * self.batch_size
+                end_index = start_index + self.batch_size
+                yield ([self.encoder_input_data[start_index: end_index],
+                        self.decoder_input_data[start_index: end_index]],
+                        self.decoder_target_data[start_index: end_index])
+
+
 maquina = "Linux" #remoto 
 # maquina = "Windows" #local Albert y Miguel
 #maquina = "MAC"
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
 #usuario = "34606"
-usuario = "apuma"
+#usuario = "apuma"
 #usuario = "carlosletaalfonso"
 
 start_index = 0
@@ -18,8 +36,12 @@ encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, 
 model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense=modelTranslation(num_encoder_tokens,num_decoder_tokens)
 model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=['accuracy'])
 
+# DATA LOADER
+data_loader = DataLoader(encoder_input_data, decoder_input_data, decoder_target_data, batch_size)
+
 # start_index += batch_size
 
+'''
 for i in range(40): # Fem 10 epochs, en cada epoch es llegeixen els 4 blocs
     #load the data and format  them for being processed
     encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
@@ -29,7 +51,19 @@ for i in range(40): # Fem 10 epochs, en cada epoch es llegeixen els 4 blocs
         start_index = 0
     else:
         start_index += batch_size
+'''
 
+for i in range(40):
+    for batch in data_loader.generate_batches():
+        # Assuming that trainSeq2Seq can take a full batch as argument
+        encoder_input, decoder_input = batch[0]
+        decoder_target = batch[1]
+        trainSeq2Seq(model, encoder_input, decoder_input, decoder_target, i)
+
+    if start_index == 120000:
+        start_index = 0
+    else:
+        start_index += batch_size
 
 # we build the final model for the inference (slightly different) and we save it
 encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense)
