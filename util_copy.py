@@ -8,14 +8,15 @@ import numpy as np
 import pickle
 import os
 import wandb
+from keras.callbacks import LearningRateScheduler
 
 batch = 128  # Batch size for training.
-epochs = 5  # Number of epochs to train for.
+epochs = 1  # Number of epochs to train for.
 latent_dim = 1024#256  # Latent dimensionality of the encoding space.
 num_samples = 139705  # Number of samples to train on. 30000
 
-#maquina = "Linux" #remoto 
-maquina = "Windows" #local Albert y Miguel
+maquina = "Linux" #remoto 
+#maquina = "Windows" #local Albert y Miguel
 #maquina = "MAC"
 
 # Path to the data txt file on disk.
@@ -35,6 +36,13 @@ elif maquina == "Windows":
 else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
 
+def schedule_learning_rate(epoch, initial_lr, max_lr, step_size):
+    cycle = np.floor(1 + epoch / (2 * step_size))
+    x = np.abs(epoch / step_size - 2 * cycle + 1)
+
+    lr = initial_lr + (max_lr - initial_lr) * np.maximum(0, (1 - x))
+
+    return lr
 
 def prepareData(data_path, start_index=None, batch_size=None):
     if batch_size:
@@ -202,7 +210,7 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
     
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense
 
-def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data):
+def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, i): # i = epoch actual
 # We load tensorboad
 # We train the model
     if maquina == "Linux":
@@ -220,13 +228,15 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     
     wandb.config.batch_size = batch
     wandb.config.epochs = epochs
-    wandb.config.validation_split = 0.01
+    wandb.config.validation_split = 0.05
+
+    # lr_scheduler = LearningRateScheduler(schedule_learning_rate(i, 0.001, 0.01, 2))
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,
               epochs=epochs,
-              validation_split=0.01,
-              callbacks = [wandb_callback])
+              validation_split=0.05,
+              callbacks = [wandb_callback]) # lr_scheduler
     
 def generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense):
 # Once the model is trained, we connect the encoder/decoder and we create a new model

@@ -16,16 +16,19 @@ encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, 
 
 # construïm el model amb totes les dades
 model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense=modelTranslation(num_encoder_tokens,num_decoder_tokens)
-model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['accuracy'])
+model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=['accuracy'])
 
 # start_index += batch_size
 
-for i in range(4): # 30000 * 4 = 120000. En cada iteració fem 5 epochs -> 4*5 = 20 epochs 
+for i in range(40): # Fem 10 epochs, en cada epoch es llegeixen els 4 blocs
     #load the data and format  them for being processed
     encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
     # we train it
-    trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data)
-    start_index += batch_size
+    trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, i) # li passem l'epoch per a calcular el lr
+    if start_index == 120000:
+        start_index = 0
+    else:
+        start_index += batch_size
 
 
 # we build the final model for the inference (slightly different) and we save it
