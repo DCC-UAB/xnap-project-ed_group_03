@@ -1,34 +1,18 @@
 from util_copy import *
 import gc
 from keras.utils import Sequence
+import tensorflow as tf
 
-class DataLoader(Sequence):
-    def __init__(self, encoder_input_data, decoder_input_data, decoder_target_data, block_size, batch_size):
-        self.encoder_input_data = encoder_input_data
-        self.decoder_input_data = decoder_input_data
-        self.decoder_target_data = decoder_target_data
-        self.block_size = block_size
-        self.batch_size = batch_size
-
-    def __len__(self):
-        return len(self.encoder_input_data) // (self.block_size * self.batch_size)
-
-    def __getitem__(self, index):
-        start_index = index * self.block_size * self.batch_size
-        end_index = (index + 1) * self.block_size * self.batch_size
-
-        encoder_input_block = self.encoder_input_data[start_index:end_index]
-        decoder_input_block = self.decoder_input_data[start_index:end_index]
-        decoder_target_block = self.decoder_target_data[start_index:end_index]
-
-        batches = []
-        for i in range(0, len(encoder_input_block), self.batch_size):
-            encoder_input_batch = encoder_input_block[i:i+self.batch_size]
-            decoder_input_batch = decoder_input_block[i:i+self.batch_size]
-            decoder_target_batch = decoder_target_block[i:i+self.batch_size]
-            batches.append(([encoder_input_batch, decoder_input_batch], decoder_target_batch))
-
-        return batches
+def data_generator(data_path, batch_size):
+    start_index = 0
+    while True:
+        # Load a batch of data
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
+        # Yield the batch of data
+        yield [encoder_input_data, decoder_input_data], decoder_target_data
+        
+        # Update the start index for the next batch
+        start_index += batch_size
 
 
 maquina = "Linux" #remoto 
@@ -41,7 +25,7 @@ usuario = "apuma"
 #usuario = "carlosletaalfonso"
 
 start_index = 0
-batch_size = 30000
+batch_size = 20000
 
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
 
@@ -50,26 +34,49 @@ model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,
 model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=['accuracy'])
 
 # DATA LOADER
-# data_sequence = DataLoader(encoder_input_data, decoder_input_data, decoder_target_data, batch_size, batch)
+generator = data_generator(data_path, batch_size)
 
-for epoch in range(10): # Fem 10 epochs, en cada epoch es llegeixen els 4 blocs
+
+for epoch in range(5):
     # del encoder_input_data, decoder_input_data, decoder_target_data
     # gc.collect()
-    for step in range(4):
-        print("ÈPOCA:",epoch)
-        #load the data and format  them for being processed
-        print("LLEGIM NOU BLOC: DE",start_index,"FINS A", start_index+batch_size)
-        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
-        # we train it
-        print("ENTRENEM MODEL AMB DADES: DE",start_index,"FINS A", start_index+batch_size)
-        trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, epoch) # li passem l'epoch per a calcular el lr
+    for step in range(5):        
+        # Load the next batch of data from the generator
+        data_batch = next(generator)
+        encoder_input_data, decoder_input_data, decoder_target_data = data_batch[0][0], data_batch[0][1], data_batch[1]        
+        # Train the model with the batch of data
+        print("ÈPOCA:", epoch)
+        trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data, epoch) # li passem l'epoch per a calcular el lr
 
-# for i in range(10):
-#     for batch in data_loader.generate_batches():
-#         # Assuming that trainSeq2Seq can take a full batch as argument
-#         encoder_input, decoder_input = batch[0]
-#         decoder_target = batch[1]
-#         trainSeq2Seq(model, encoder_input, decoder_input, decoder_target, i)
+
+# Determina el número total de lotes y el tamaño del lote
+# num_batches = 12
+
+# for epoch in range(10):
+#     start_index = 0    
+#     for step in range(num_batches):
+#         print("ÉPOCA:", epoch)
+#         # Carga el lote actual en la memoria principal (CPU)
+#         batch_encoder_input_data = encoder_input_data[start_index: start_index + batch_size]
+#         batch_decoder_input_data = decoder_input_data[start_index: start_index + batch_size]
+#         batch_decoder_target_data = decoder_target_data[start_index: start_index + batch_size]
+        
+#         # Transfiere los lotes a la GPU
+#         # batch_encoder_input_data_gpu = tf.convert_to_tensor(batch_encoder_input_data)
+#         # batch_decoder_input_data_gpu = tf.convert_to_tensor(batch_decoder_input_data)
+#         # batch_decoder_target_data_gpu = tf.convert_to_tensor(batch_decoder_target_data)
+        
+#         # Entrena el modelo con el lote actual en la GPU
+#         trainSeq2Seq(model, batch_encoder_input_data, batch_decoder_input_data, batch_decoder_target_data, epoch)
+        
+#         # Libera la memoria de los lotes en la GPU
+#         # del batch_encoder_input_data_gpu
+#         # del batch_decoder_input_data_gpu
+#         # del batch_decoder_target_data_gpu
+        
+#         # Incrementa el índice de inicio para el siguiente lote
+#         start_index += batch_size
+
 
 # we build the final model for the inference (slightly different) and we save it
 encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense)

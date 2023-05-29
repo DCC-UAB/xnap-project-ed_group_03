@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from keras.models import Model
-from keras.layers import Input, LSTM, Dense, GRU
+from keras.layers import Input, LSTM, Dense, GRU, Dropout
 from keras.models import load_model
 # from keras.callbacks import TensorBoard
 import numpy as np
@@ -9,11 +9,13 @@ import pickle
 import os
 import wandb
 from keras.callbacks import LearningRateScheduler
+from nltk.translate.bleu_score import sentence_bleu
+import tensorflow as tf
 
 batch = 128  # Batch size for training.
-epochs = 1  # Number of epochs to train for.
+epochs = 3  # Number of epochs to train for.
 latent_dim = 1024#256  # Latent dimensionality of the encoding space.
-num_samples = 139705  # Number of samples to train on. 30000
+num_samples =  139705 # Number of samples to train on. 60000
 
 maquina = "Linux" #remoto 
 #maquina = "Windows" #local Albert y Miguel
@@ -36,11 +38,40 @@ elif maquina == "Windows":
 else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
 
-def schedule_learning_rate(epoch, initial_lr, max_lr, step_size):
-    cycle = np.floor(1 + epoch / (2 * step_size))
-    x = np.abs(epoch / step_size - 2 * cycle + 1)
 
-    lr = initial_lr + (max_lr - initial_lr) * np.maximum(0, (1 - x))
+# Definición de la métrica BLEU
+def bleu_score(y_true, y_pred):
+    # Asegurarse de que las secuencias sean listas de palabras
+    y_true = tf.keras.backend.cast(y_true, dtype=tf.string)
+    y_pred = tf.keras.backend.cast(y_pred, dtype=tf.string)
+
+    y_true = y_true.numpy()
+    y_pred = y_pred.numpy()
+    
+    # Obtener el número de muestras en el lote
+    batch_size = tf.shape(y_true)[0]
+    
+    # Inicializar la puntuación BLEU acumulada
+    bleu_total = 0.0
+    
+    # Calcular la puntuación BLEU para cada muestra en el lote
+    for i in range(batch_size):
+        reference = y_true[i].numpy().decode('utf-8').split()  # Secuencia de referencia
+        hypothesis = y_pred[i].numpy().decode('utf-8').split()  # Secuencia generada por el modelo
+        bleu = sentence_bleu([reference], hypothesis)  # Cálculo de la puntuación BLEU
+        bleu_total += bleu
+    
+    # Calcular el promedio de las puntuaciones BLEU
+    bleu_avg = bleu_total / batch_size
+    
+    return bleu_avg
+
+def schedule_learning_rate(epoch): #, initial_lr, max_lr, step_size
+    # cycle = np.floor(1 + epoch / (2 * 1))
+    # x = np.abs(epoch / 1 - 2 * cycle + 1)
+
+    # lr = 0.001 + (0.05 - 0.001) * np.maximum(0, (1 - x))
+    lr = 0.01 * 0.01 ** epoch
 
     return lr
 
@@ -96,7 +127,7 @@ def extractChar(data_path,exchangeLanguage=False):
 
     return input_characters,target_characters,input_texts,target_texts
 
-def extractChar_batch(data_path, input_characters, target_characters,exchangeLanguage=False, start_index=0, batch_size=30000):
+def extractChar_batch(data_path, input_characters, target_characters,exchangeLanguage=False, start_index=0, batch_size=20000):
     input_texts = []
     target_texts = []
     input_characters = set()
@@ -206,6 +237,8 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
     decoder_outputs = decoder_dense(decoder_outputs)
 
+    decoder_outputs = Dropout(0.2)(decoder_outputs)
+
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
     
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense
@@ -220,8 +253,6 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     else:
         LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/log" #### local leta
         
-    # tbCallBack = TensorBoard(log_dir=LOG_PATH, histogram_freq=0, write_graph=True, write_images=True)
-
     # Run training
     wandb.init(project="XNAP-PROJECT-ED_GROUP_03")
     wandb_callback = wandb.keras.WandbCallback()
@@ -230,13 +261,13 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb.config.epochs = epochs
     wandb.config.validation_split = 0.05
 
-    # lr_scheduler = LearningRateScheduler(schedule_learning_rate(i, 0.001, 0.01, 2))
+    lr_scheduler = LearningRateScheduler(schedule_learning_rate) #(i, 0.001, 0.01, 2)
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,
               epochs=epochs,
               validation_split=0.05,
-              callbacks = [wandb_callback]) # lr_scheduler
+              callbacks = [wandb_callback, lr_scheduler])
     
 def generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense):
 # Once the model is trained, we connect the encoder/decoder and we create a new model
