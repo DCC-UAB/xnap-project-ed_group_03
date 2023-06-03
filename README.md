@@ -17,6 +17,50 @@ To run the example code:
 ```
 python main.py
 ```
+## DATASET
+Para nuestro proyecto utilizamos el dataset Anki. Este dataset ha sido ampliamente utilizado en la traducción automática mediante redes neuronales. Se constituye en una recopilación de oraciones y frases en múltiples idiomas utilizado para entrenar y evaluar modelos de traducción automática.
+
+Está estructurado en forma de parejas de oraciones, por cada par una oración está en el idioma de origen y la otra es su correspondiente traducción en el idioma objetivo. Cabe destacar que estos pares de oraciones no tienen porqué ser de longitudes y complejidades iguales, es decir que una oración puede ser más corta que la otra, esto permite explorar una gran variedad de escenarios de traducción ya que la mayoría de las veces una frase en un idioma no será de la misma dimensión que su traducción en otro.
+
+Este dataset tiene un amplio abanico de idiomas disponibles, lo cual lo hace muy útil. Algunos idiomas del Anki dataset son inglés, español, japonés, italiano, chino… Aún así debemos remarcar que no todos los idiomas tienen el mismo número de muestras, por ejemplo, en español tenemos cerca de 140000 muestras mientras que en catalán tenemos unas mil y pocas. Un punto positivo es que, en los idiomas los cuales tiene muchas muestras, la variedad de oraciones es muy elevada, si juntamos eso con un gran volumen de datos en el dataset podemos obtener un modelo para capturar patrones y generalizar bueno.
+
+Cómo último punto técnico del dataset debemos decir que la calidad de las traducciones es muy buena. Muchas veces incluso en series con subtítulos podemos observar traducciones poco acertadas, pero no es el caso del Anki dataset. En este dataset, muchas de las traducciones han sido generadas por hablantes nativos o traductores profesionales. Debido a esto, los modelos de traducción automática que se entrenen con Anki dataset tienen muestras de alta calidad para aprender y predecir traducciones.
+
+En nuestro caso, empezamos trabajando con el dataset de traducciones al catalán, pero este al tener muy pocas muestras no iba a ser adecuado a nuestro proyecto. Dicho eso, para hacer todas las pruebas, hemos utilizado el dataset que traduce al español ya que este tiene 139705 muestras, que es un volumen considerable. 
+
+## ARQUITECTURA
+Para la realización del proyecto se han empleado dos modelos, uno de entrenamiento y otro de inferencia. El modelo de entrenamiento se encarga de aprender a partir de un conjunto de datos etiquetados, ajustando sus parámetros para minimizar la función de pérdida. Una vez ya ha sido entrenado al completo, el modelo de inferencia se usa para generar traducciones a partir de nuevas secuencias de entrada, es decir para poder hacer traducciones en tiempo real de lo que se le pase. Este segundo modelo toma la secuencia de entrada y produce una secuencia de salida correspondiente en el idioma escogido.
+
+![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/9855637a-e43d-4066-bed1-898106a8b11b)
+
+Como se muestra en la imagen, dada una secuencia inicial (cada índice de x corresponde a una palabra de la secuencia) se codifica en un vector hidden y se obtiene una secuencia de salida al decodificar este vector. La secuencia resultante será mejor o peor en función de la capacidad que tenga el modelo de identificar patrones y retener una comprensión profunda de la estructura y la semántica del lenguaje.
+
+### ARQUITECTURA DEL MODELO ENTRENADO
+Para este proyecto usamos Seq2Seq (Sequence-to-Sequence), que se trata de un modelo de aprendizaje automático usado en el procesamiento del lenguaje natural para la traducción automática, generación de texto y otras tareas relacionadas con secuencias. 
+Seq2Seq tiene dos componentes principales, un codificador (encoder) y decodificador (decoder). 
+El codificador toma una secuencia de entrada a través de capas de redes neuronales recurrentes como células LSTM (Long Short-Term Memory) o GRU (Gated Recurrent Unit), por ejemplo una frase en un idioma determinado y la transforma en un vector de estado oculto.
+Un vector de estado oculto, o hidden state vector en inglés es una representación abstracta y compacta que captura la información relevante y el contexto de una secuencia de entrada en un momento dado. A medida que la secuencia de entrada se pasa por las capas de la red neuronal recurrente, el vector de estado oculto se actualiza. Éste, condensa la información relevante de la secuencia de entrada en una forma que puede ser utilizada por el decodificador (decoder) para generar la secuencia de salida, en nuestro caso, en un idioma diferente. 
+El decodificador a su vez, produce una palabra o token, teniendo en cuenta tanto la representación actual como las palabras generadas anteriormente.
+Un token es una unidad básica de texto que se utiliza como punto de referencia durante el análisis y la generación de texto. Puede ser una palabra, un carácter, etc… Por ejemplo, tomando la frase “Hola, ¿cómo estás?”, los tokens podrían ser, “hola”, “¿”, “cómo”… En nuestro proyecto los tokens son palabras.
+La arquitectura del entrenamiento sigue el método “forcing teacher”. Este consiste en proporcionar al decodificador la secuencia de salida objetivo correcta en cada paso de tiempo durante el entrenamiento, en lugar de utilizar las salidas generadas por el propio modelo como entrada para el siguiente paso. Este método tiene distintas ventajas como estabilidad en el entrenamiento; al proporcionar la secuencia objetivo correcta en cada paso estabilizamos el entrenamiento y reducimos la convergencia del modelo.
+
+### ARQUITECTURA DEL MODELO DE INFERENCIA 
+Durante la generación de la inferencia, el modelo utiliza una regresión autoregresiva. En la decodificación autoregresiva, se genera la secuencia de salida paso a paso, tomando la salida generada en el paso anterior como entrada para el siguiente paso. En este caso, el modelo de inferencia utiliza iterativamente el decodificador para generar la secuencia de salida, alimentando su propia salida generada en cada paso.
+En nuestro modelo de inferencia se compone del codificador y del decodificador. El codificador recibe como entrada los datos de entrada y produce los estados internos del codificador. Estos estados internos se utilizan como estado inicial del decodificador. A medida que el decodificador genera cada paso de la secuencia de salida, actualiza sus propios estados internos y utiliza la salida generada como entrada para el siguiente paso.
+
+El proceso sería: empezar con una secuencia objetivo de tamaño 1 (solo el carácter de inicio de secuencia), ir pasando los vectores de estado y la secuencia objetivo de 1 carácter al decodificador para producir predicciones para el siguiente carácter, mostrar el siguiente carácter usando estas predicciones (se usa argmax), agregar el carácter muestreado a la secuencia de destino y repetir hasta que se genere el carácter de fin de secuencia o se llegue al límite de caracteres.
+
+## MEMORIA
+
+Partiendo del proyecto usado como punto inicial, primero se tuvo que resolver un problema de memoria, con 139705 muestras en el entrenamiento, las máquinas virtuales alcanzaban la capacidad máxima de memoria en nuestra GPU abortando el proceso y haciendo que no se pudiera entrenar el conjunto de datos completo de una vez.
+Para solucionar este problema decidimos seguir un enfoque llamado “batch-training”. Este consiste en entrenar nuestro modelo usando lotes (batches) de datos en vez de procesar el conjunto de datos entero de una tirada. En este proceso, los datos de entrenamiento se dividen en subconjuntos más pequeños de datos llamados lotes, y los parámetros del modelo se actualizan en los gradientes calculados en cada lote.
+
+Los objetivos que teníamos con este enfoque eran:
+  - Ganar eficiencia en memoria: en vez de procesar el dataset entero de una vez solo debíamos procesar cada lote cada vez, lo que significaba que no ejecutábamos tantos datos.
+  - Generalización: un enfoque basado en lotes ayuda con la generalización del modelo, esto se debe a que prevenimos que el modelo memorice ejemplos específicos introduciendo variabilidad en cada época.
+
+Al principio dividimos los datos en lotes de 30000 muestras, este número viene de que queríamos hacer los lotes lo más grandes posible. Queríamos mejorar la eficiencia del entrenamiento aventajándonos de la capacidad de procesado paralelo en la GPU, por otro lado también queríamos una mayor generalización y estimaciones de gradiente más suaves, esto es debido a que lotes más grandes son más representativos de todo el dataset en cuanto a variedad de muestras, comparado con lotes más pequeños o ejemplos individuales.  Con esta implementación queríamos actualizaciones más estables y solucionar el problema de memoria.
+
 
 ## Resultados (Gráficas y predicciones)
 Una vez aplicados los cambios relativos al overfitting, decidimos también aplicar cambios en la arquitectura e hiperparámetros para mejorar el código de starting point. La primera decisión que tomamos fue probar una ejecución tanto con las capas de LSTM como con las de GRU para determinar cuáles son las que mejor se ajustaban a nuestro modelo y con las que obteníamos mejores resultados.
