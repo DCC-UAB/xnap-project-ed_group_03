@@ -50,8 +50,16 @@ En nuestro modelo de inferencia se compone del codificador y del decodificador. 
 
 El proceso sería: empezar con una secuencia objetivo de tamaño 1 (solo el carácter de inicio de secuencia), ir pasando los vectores de estado y la secuencia objetivo de 1 carácter al decodificador para producir predicciones para el siguiente carácter, mostrar el siguiente carácter usando estas predicciones (se usa argmax), agregar el carácter muestreado a la secuencia de destino y repetir hasta que se genere el carácter de fin de secuencia o se llegue al límite de caracteres.
 
-## MEMORIA
+## ENTRENAMIENTO
+Inicialmente, tuvimos que pensar que estrategia en cuanto a bloques y épocas podíamos seguir para realizar nuestro training. Decidimos entrenar para cada bloque, durante varias épocas, 5. El modelo veía los datos muchas veces de un determinado bloque en vez de ir viendo a menudo los otros datos del siguiente; entonces, cuando saltaba al otro bloque, el modelo se había sobre ajustado demasiado a los datos del anterior bloque. Podríamos decir que memorizaba los datos del entrenamiento de ese bloque en lugar de aprender de ellos. Esto lo íbamos viendo en las gráficas que iban saliendo en el Wandb, con unos picos bastante pronunciados de bajada de accuracy e incremento de la loss. 
 
+Viendo que no generalizaba bien con esta estrategia de varias épocas por bloques, decidimos probar con una alternativa opuesta. En este caso se trataría de leer una vez un bloque, y entrenar el modelo con este; de esta forma, ir pasando de bloque en bloque, y cuando ya se hayan leído todos los bloques, eso ya representaría una época entera. De esta forma, se entrenaba el modelo adoptando una estrategia BFS (en el sentido que se exploran primero todos los lotes) y aprendía progresivamente de cada bloque, sin sobre ajustarse a ninguno,ya que no tiene la ‘oportunidad’ de memorizar tanto los datos de cada bloque, en cambio ve una variedad más amplia de datos en una época. 
+
+Para visualizar mejor las diferencias que hemos comentado entre nuestro primer intento y el definitivo, adjuntamos unas gráficas donde se ve la diferencia de loss, validation loss, accuracy y validation accuracy; en las que se ve claramente un patrón en las líneas de 5 épocas por bloque, con picos de bajada en las accuracies y picos de subida en las loss, mientras que la alternativa sigue un camino más lineal, más favorable.
+
+<img width="600" alt="image" src="https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/e71a5584-9521-45f3-b285-1f8300df34bf">
+
+## MEMORIA
 Partiendo del proyecto usado como punto inicial, primero se tuvo que resolver un problema de memoria, con 139705 muestras en el entrenamiento, las máquinas virtuales alcanzaban la capacidad máxima de memoria en nuestra GPU abortando el proceso y haciendo que no se pudiera entrenar el conjunto de datos completo de una vez.
 Para solucionar este problema decidimos seguir un enfoque llamado “batch-training”. Este consiste en entrenar nuestro modelo usando lotes (batches) de datos en vez de procesar el conjunto de datos entero de una tirada. En este proceso, los datos de entrenamiento se dividen en subconjuntos más pequeños de datos llamados lotes, y los parámetros del modelo se actualizan en los gradientes calculados en cada lote.
 
@@ -61,6 +69,22 @@ Los objetivos que teníamos con este enfoque eran:
 
 Al principio dividimos los datos en lotes de 30000 muestras, este número viene de que queríamos hacer los lotes lo más grandes posible. Queríamos mejorar la eficiencia del entrenamiento aventajándonos de la capacidad de procesado paralelo en la GPU, por otro lado también queríamos una mayor generalización y estimaciones de gradiente más suaves, esto es debido a que lotes más grandes son más representativos de todo el dataset en cuanto a variedad de muestras, comparado con lotes más pequeños o ejemplos individuales.  Con esta implementación queríamos actualizaciones más estables y solucionar el problema de memoria.
 
+Optamos también por crear un data loader para generar lotes de datos para el entrenamiento e ir agregándolos de a poco a memoria. No obstante, el problema persistía y si queríamos ejecutar el modelo con lotes miles de datos obteníamos errores de memoria. Es por ello que optamos por reducir la cantidad de datos y en lugar de usar las 140000 frases, usar simplemente 80000. 
+
+Para poder cuantificar la magnitud de la complejidad del problema, utilizamos varios comandos en terminal. Con el model summary, pudimos ver que nuestro modelo, con nuestro latent dim base, tiene prácticamente 10 millones de parámetros. Esto implica que todos los cálculos que tengan que ver con parámetros y actualizaciones, ocupan mucha memoria; demostrando así que se trata de un modelo bastante grande, a nuestro parecer. Es por ello, que como mencionaremos más adelante, consideramos en simplificar el modelo disminuyendo la cantidad de características internas que el modelo utiliza para representar los datos.
+
+## OVERFITTING
+Durante todo este proyecto, el overfitting ha estado presente en todo momento.  A pesar de haber solucionado un poco el problema en cierta medida, bien es cierto que no está del todo solucionado como se podrá ver en las gráficas que pondremos a continuación.
+
+Al ajustarse demasiado el modelo a los datos de nuestro conjunto de training, barajamos diferentes opciones para de alguna manera, simplificar nuestro modelo: drop out y disminución del latent dim.
+
+En cuanto al drop out, durante el entrenamiento, algunas neuronas de la red se ‘apagan’ o se desactivan aleatoriamente. Al apagar algunas neuronas, se impide que las neuronas en la red se co-adapten demasiado. Esto significa que las neuronas no pueden depender demasiado de la presencia de otras neuronas específicas. De esta manera, se evita que el modelo dependa demasiado de algunas características y ayuda a prevenir el overfitting.
+
+En la parte de la disminución del latent dim, tenemos que el latent dim es la cantidad de características internas que el modelo utiliza para representar los datos, en nuestro caso las frases que está traduciendo. Si reducimos esta dimensión del latent dim de 1024, como teníamos inicialmente, a 256, estamos disminuyendo la cantidad de características internas que el modelo puede aprender para representar los datos de entrada. Esto puede ayudar a reducir el overfitting, ya que estamos simplificando el modelo y limitando su capacidad para memorizar los datos de training.
+
+Podemos ver en la gráficas del WandB, que aunque a partir de ciertas iteraciones, el overfitting en cierta medida está presente con las dos soluciones propuestas, generalmente tanto las accuracies como las loss, mejoran con respecto a la versión sin estas mejoras.
+
+<img width="600" alt="image" src="https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/2aa95724-aa65-49a3-bcca-75f8edac270c">
 
 ## Resultados (Gráficas y predicciones)
 Una vez aplicados los cambios relativos al overfitting, decidimos también aplicar cambios en la arquitectura e hiperparámetros para mejorar el código de starting point. La primera decisión que tomamos fue probar una ejecución tanto con las capas de LSTM como con las de GRU para determinar cuáles son las que mejor se ajustaban a nuestro modelo y con las que obteníamos mejores resultados.
