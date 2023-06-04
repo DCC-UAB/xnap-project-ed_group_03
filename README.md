@@ -15,7 +15,8 @@ Finalmente, los archivos .py (predictionTranslation, util y training) son los ar
 - Ejecute el archivo training.py para entrenar el modelo.
 - Para hacer las predicciones, ejecute predictionTranslation.py una vez el modelo se ha entrenado.
 
-## OBJETIVOS
+
+## Objectives
 El objetivo principal de este proyecto es la creación y optimización de un modelo de traducción automática basado en técnicas de Deep Learning. En este contexto, se plantea el desafío o reto de desarrollar un modelo que sea capaz de trabajar con varios idiomas, principalmente castellano e inglés, incluyendo otros idiomas como catalán, finlandés…, es decir, aquellos que utilizan nuestro abecedario occidental; y proporcionar traducciones de una calidad razonable.
 
 Sin embargo, el enfoque del proyecto no se limita solo a la creación del modelo, sino que también se enfoca hacia la mejora continua de su rendimiento. Este enfoque implica una búsqueda constante para aumentar la accuracy del modelo, experimentando con diferentes arquitecturas de red, ajustando hiper parámetros, y aplicando técnicas para mitigar el overfitting. 
@@ -38,6 +39,7 @@ Este dataset tiene un amplio abanico de idiomas disponibles, lo cual lo hace muy
 Cómo último punto técnico del dataset debemos decir que la calidad de las traducciones es muy buena. Muchas veces incluso en series con subtítulos podemos observar traducciones poco acertadas, pero no es el caso del Anki dataset. En este dataset, muchas de las traducciones han sido generadas por hablantes nativos o traductores profesionales. Debido a esto, los modelos de traducción automática que se entrenen con Anki dataset tienen muestras de alta calidad para aprender y predecir traducciones.
 
 En nuestro caso, empezamos trabajando con el dataset de traducciones al catalán, pero este al tener muy pocas muestras no iba a ser adecuado a nuestro proyecto. Dicho eso, para hacer todas las pruebas, hemos utilizado el dataset que traduce al español ya que este tiene 139705 muestras, que es un volumen considerable. 
+
 
 ## Architecture
 Para la realización del proyecto se han empleado dos modelos, uno de entrenamiento y otro de inferencia. El modelo de entrenamiento se encarga de aprender a partir de un conjunto de datos etiquetados, ajustando sus parámetros para minimizar la función de pérdida. Una vez ya ha sido entrenado al completo, el modelo de inferencia se usa para generar traducciones a partir de nuevas secuencias de entrada, es decir para poder hacer traducciones en tiempo real de lo que se le pase. Este segundo modelo toma la secuencia de entrada y produce una secuencia de salida correspondiente en el idioma escogido.
