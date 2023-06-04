@@ -5,18 +5,12 @@ El proyecto presentado a continuación consiste en un modelo de RNN que usa la a
 ## Code structure
 You must create as many folders as you consider. You can use the proposed structure or replace it by the one in the base code that you use as starting point. Do not forget to add Markdown files as needed to explain well the code and how to use it.
 
-## Example Code
-The given code is a simple CNN example training on the MNIST dataset. It shows how to set up the [Weights & Biases](https://wandb.ai/site)  package to monitor how your network is learning, or not.
+## How to Run the code?
 
-Before running the code you have to create a local environment with conda and activate it. The provided [environment.yml](https://github.com/DCC-UAB/XNAP-Project/environment.yml) file has all the required dependencies. Run the following command: ``conda env create --file environment.yml `` to create a conda environment with all the required dependencies and then activate it:
-```
-conda activate xnap-example
-```
+- Actualice las rutas en util.py, training.py y predictionTranslation.py en función del SO que esté usando (variable LOG_PATH en util.py y filename en los otros dos).
+- Ejecute el archivo training.py para entrenar el modelo.
+- Para hacer las predicciones, ejecute predictionTranslation.py una vez el modelo se ha entrenado.
 
-To run the example code:
-```
-python main.py
-```
 ## DATASET
 Para nuestro proyecto utilizamos el dataset Anki. Este dataset ha sido ampliamente utilizado en la traducción automática mediante redes neuronales. Se constituye en una recopilación de oraciones y frases en múltiples idiomas utilizado para entrenar y evaluar modelos de traducción automática.
 
