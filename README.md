@@ -12,8 +12,8 @@ Finalmente, los archivos .py (predictionTranslation, util y training) son los ar
 ## How to Run the code?
 
 - Actualice las rutas en util.py, training.py y predictionTranslation.py en función del SO que esté usando (variable LOG_PATH en util.py y filename en los otros dos).
-- Ejecute el archivo training.py para entrenar el modelo.
-- Para hacer las predicciones, ejecute predictionTranslation.py una vez el modelo se ha entrenado.
+- Ejecute el archivo training.py para entrenar el modelo. Puede utilizar el comando 'python training.py'.
+- Para hacer las predicciones, ejecute predictionTranslation.py una vez el modelo se ha entrenado. Puede utilizar el comando 'python predictionTranslation.py'.
 
 
 ## Objectives
@@ -95,7 +95,7 @@ Al ajustarse demasiado el modelo a los datos de nuestro conjunto de training, ba
 
 En cuanto al drop out, durante el entrenamiento, algunas neuronas de la red se ‘apagan’ o se desactivan aleatoriamente. Al apagar algunas neuronas, se impide que las neuronas en la red se co-adapten demasiado. Esto significa que las neuronas no pueden depender demasiado de la presencia de otras neuronas específicas. De esta manera, se evita que el modelo dependa demasiado de algunas características y ayuda a prevenir el overfitting.
 
-En la parte de la disminución del latent dim, tenemos que el latent dim es la cantidad de características internas que el modelo utiliza para representar los datos, en nuestro caso las frases que está traduciendo. Si reducimos esta dimensión del latent dim de 1024, como teníamos inicialmente, a 512, estamos disminuyendo la cantidad de características internas que el modelo puede aprender para representar los datos de entrada. Esto puede ayudar a reducir el overfitting, ya que estamos simplificando el modelo y limitando su capacidad para memorizar los datos de training.
+En la parte de la disminución del latent dim, tenemos que el latent dim es la cantidad de características internas que el modelo utiliza para representar los datos, en nuestro caso las frases que está traduciendo. Si reducimos esta dimensión del latent dim de 1024, como teníamos inicialmente, a 256, estamos disminuyendo la cantidad de características internas que el modelo puede aprender para representar los datos de entrada. Esto puede ayudar a reducir el overfitting, ya que estamos simplificando el modelo y limitando su capacidad para memorizar los datos de training.
 
 Podemos ver en la gráficas del WandB, que aunque a partir de ciertas iteraciones, el overfitting en cierta medida está presente con las dos soluciones propuestas, generalmente tanto las accuracies como las loss, mejoran con respecto a la versión sin estas mejoras.
 
@@ -150,12 +150,12 @@ Como conclusiones del proyecto, creemos haber realizado un buen trabajo, mejoran
 
 En la documentación del proyecto usado como punto inicial, se aclara que entrenar el modelo por completo tarda semanas y que se empiezan a obtener buenos resultados cuando se entrena más de 20 horas, es por ello, que cómo posible mejora nos hubiese gustado poder ejecutar durante más tiempo el modelo. También creemos que para mejorar resultados se deberían añadir más capas de LSTM (o de GRU, si se usarán en su lugar) para aumentar la complejidad del modelo y que este pueda aprender patrones más complejos de ambos lenguajes.
 
-Finalmente, pese a las dificultades que hemos tenido, creemos que la experiencia de usar máquinas remotas de Azure para tener maypr capacidad de ejecución ha sido una experiencia agradable. Los profesores han presentado herramientas muy útiles que nos han facilitado faena, cómo la interfaz de Weights & Biases (que auto gestiona las gráficas) o el uso de Github, que ha permitido trabajar en grupo más cómodamente y las cuales planeamos usar en un futuro para próximos proyectos.
+Finalmente, pese a las dificultades que hemos tenido, creemos que la experiencia de usar máquinas remotas de Azure para tener mayor capacidad de ejecución ha sido una experiencia agradable. Los profesores han presentado herramientas muy útiles que nos han facilitado faena, cómo la interfaz de Weights & Biases (que auto gestiona las gráficas) o el uso de Github, que ha permitido trabajar en grupo más cómodamente y las cuales planeamos usar en un futuro para próximos proyectos.
 
 ## Contributors
 Albert Pumar - 1597973@uab.cat
 Miguel J Garrido - 1605542@uab.cat
-Carlos Leta A. - 1599255@uab.cat
+Carlos Leta - 1599255@uab.cat
 
 Xarxes Neuronals i Aprenentatge Profund
 Grau de Data Engineering, 
