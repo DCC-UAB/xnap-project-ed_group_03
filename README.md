@@ -3,7 +3,11 @@
 El proyecto presentado a continuación consiste en un modelo de RNN que usa la arquitectura de aprendizaje Seq2Seq para traducir una secuencia del inglés a otro idioma. En este documento se describe paso a paso el proceso de creación del modelo (partiendo de un proyecto base, https://github.com/OValery16/Language-Translation-with-deep-learning-), con los inconvenientes encontrados y las soluciones propuestas hasta llegar al resultado final. El código está preparado para generar las gráficas de pérdida del entrenamiento y validación, las gráficas de precisión (accuracy) del entrenamiento y validación, y la gráfica de épocas usando la interfaz de Weights and Biases ([Weights & Biases](https://wandb.ai/site)). Además, el código ha sido ajustado para poderse ejecutar en remoto usando el sistema operativo Linux mediante máquinas virtuales en Azure.
 
 ## Code structure
-You must create as many folders as you consider. You can use the proposed structure or replace it by the one in the base code that you use as starting point. Do not forget to add Markdown files as needed to explain well the code and how to use it.
+Este proyecto contiene toda la información necesaria para ejecutar el código. Las carpetas con nombres que siguen la estructura xxx-eng corresponden a los datasets de cada idioma. La carpeta outputs contiene información de salida de las ejecuciones de los archivos .py y la carpeta wandb contiene la información referente a la gráfica y que produce la interfaz de Weights & Biases al ejecutar el código. Los archivos .h5 (debe haber uno para el codificador y el decodificador) contienen la información del modelo entrenado que se crean una vez se ejecuta el archivo training.py. Estos archivos son usados por el archivo predictionTranslation.py para realizar las predicciones con la información que ha obtenido el modelo del entrenamiento.
+
+El contenido del archivo environment.yml especifica las dependencias del proyecto, es decir, los paquetes y librerías de Python necesarios para ejecutar correctamente el código. No es necesario hacer nada con este archivo, sólo debería modificarse en caso de querer modificar el entorno de desarrollo.
+Finalmente, los archivos .py (predictionTranslation, util y training) son los archivos Python que contienen el código del proyecto. En el archivo util.py, se encuentran todas las funciones definidas que usan los otros dos archivos, este archivo no es necesario ejecutarlo, pero se deberán modificar las rutas (variable LOG_PATH). En el archivo training.py se encuentran las llamadas a funciones necesarias para realizar el proceso de entrenamiento (que se encuentran, como ya hemos mencionado, en el archivo util.py). De la misma forma, en el archivo predictionTranslation.py se encuentran las llamadas a funciones necesarias para, en este caso, realizar las predicciones.
+
 
 ## How to Run the code?
 
@@ -11,7 +15,7 @@ You must create as many folders as you consider. You can use the proposed struct
 - Ejecute el archivo training.py para entrenar el modelo.
 - Para hacer las predicciones, ejecute predictionTranslation.py una vez el modelo se ha entrenado.
 
-## DATASET
+## Dataset
 Para nuestro proyecto utilizamos el dataset Anki. Este dataset ha sido ampliamente utilizado en la traducción automática mediante redes neuronales. Se constituye en una recopilación de oraciones y frases en múltiples idiomas utilizado para entrenar y evaluar modelos de traducción automática.
 
 Está estructurado en forma de parejas de oraciones, por cada par una oración está en el idioma de origen y la otra es su correspondiente traducción en el idioma objetivo. Cabe destacar que estos pares de oraciones no tienen porqué ser de longitudes y complejidades iguales, es decir que una oración puede ser más corta que la otra, esto permite explorar una gran variedad de escenarios de traducción ya que la mayoría de las veces una frase en un idioma no será de la misma dimensión que su traducción en otro.
@@ -22,29 +26,31 @@ Cómo último punto técnico del dataset debemos decir que la calidad de las tra
 
 En nuestro caso, empezamos trabajando con el dataset de traducciones al catalán, pero este al tener muy pocas muestras no iba a ser adecuado a nuestro proyecto. Dicho eso, para hacer todas las pruebas, hemos utilizado el dataset que traduce al español ya que este tiene 139705 muestras, que es un volumen considerable. 
 
-## ARQUITECTURA
+## Architecture
 Para la realización del proyecto se han empleado dos modelos, uno de entrenamiento y otro de inferencia. El modelo de entrenamiento se encarga de aprender a partir de un conjunto de datos etiquetados, ajustando sus parámetros para minimizar la función de pérdida. Una vez ya ha sido entrenado al completo, el modelo de inferencia se usa para generar traducciones a partir de nuevas secuencias de entrada, es decir para poder hacer traducciones en tiempo real de lo que se le pase. Este segundo modelo toma la secuencia de entrada y produce una secuencia de salida correspondiente en el idioma escogido.
 
 ![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/9855637a-e43d-4066-bed1-898106a8b11b)
 
 Como se muestra en la imagen, dada una secuencia inicial (cada índice de x corresponde a una palabra de la secuencia) se codifica en un vector hidden y se obtiene una secuencia de salida al decodificar este vector. La secuencia resultante será mejor o peor en función de la capacidad que tenga el modelo de identificar patrones y retener una comprensión profunda de la estructura y la semántica del lenguaje.
 
-### ARQUITECTURA DEL MODELO ENTRENADO
-Para este proyecto usamos Seq2Seq (Sequence-to-Sequence), que se trata de un modelo de aprendizaje automático usado en el procesamiento del lenguaje natural para la traducción automática, generación de texto y otras tareas relacionadas con secuencias. 
-Seq2Seq tiene dos componentes principales, un codificador (encoder) y decodificador (decoder). 
+### Training model architecture
+Para este proyecto usamos Seq2Seq (Sequence-to-Sequence), que se trata de un modelo de aprendizaje automático usado en el procesamiento del lenguaje natural para la traducción automática, generación de texto y otras tareas relacionadas con secuencias.  Seq2Seq tiene dos componentes principales, un codificador (encoder) y decodificador (decoder).
+
 El codificador toma una secuencia de entrada a través de capas de redes neuronales recurrentes como células LSTM (Long Short-Term Memory) o GRU (Gated Recurrent Unit), por ejemplo una frase en un idioma determinado y la transforma en un vector de estado oculto.
-Un vector de estado oculto, o hidden state vector en inglés es una representación abstracta y compacta que captura la información relevante y el contexto de una secuencia de entrada en un momento dado. A medida que la secuencia de entrada se pasa por las capas de la red neuronal recurrente, el vector de estado oculto se actualiza. Éste, condensa la información relevante de la secuencia de entrada en una forma que puede ser utilizada por el decodificador (decoder) para generar la secuencia de salida, en nuestro caso, en un idioma diferente. 
+Un vector de estado oculto, o hidden state vector en inglés es una representación abstracta y compacta que captura la información relevante y el contexto de una secuencia de entrada en un momento dado. A medida que la secuencia de entrada se pasa por las capas de la red neuronal recurrente, el vector de estado oculto se actualiza. Éste, condensa la información relevante de la secuencia de entrada en una forma que puede ser utilizada por el decodificador (decoder) para generar la secuencia de salida, en nuestro caso, en un idioma diferente.
+
 El decodificador a su vez, produce una palabra o token, teniendo en cuenta tanto la representación actual como las palabras generadas anteriormente.
 Un token es una unidad básica de texto que se utiliza como punto de referencia durante el análisis y la generación de texto. Puede ser una palabra, un carácter, etc… Por ejemplo, tomando la frase “Hola, ¿cómo estás?”, los tokens podrían ser, “hola”, “¿”, “cómo”… En nuestro proyecto los tokens son palabras.
 La arquitectura del entrenamiento sigue el método “forcing teacher”. Este consiste en proporcionar al decodificador la secuencia de salida objetivo correcta en cada paso de tiempo durante el entrenamiento, en lugar de utilizar las salidas generadas por el propio modelo como entrada para el siguiente paso. Este método tiene distintas ventajas como estabilidad en el entrenamiento; al proporcionar la secuencia objetivo correcta en cada paso estabilizamos el entrenamiento y reducimos la convergencia del modelo.
 
-### ARQUITECTURA DEL MODELO DE INFERENCIA 
+### Inference model architecture
 Durante la generación de la inferencia, el modelo utiliza una regresión autoregresiva. En la decodificación autoregresiva, se genera la secuencia de salida paso a paso, tomando la salida generada en el paso anterior como entrada para el siguiente paso. En este caso, el modelo de inferencia utiliza iterativamente el decodificador para generar la secuencia de salida, alimentando su propia salida generada en cada paso.
+
 En nuestro modelo de inferencia se compone del codificador y del decodificador. El codificador recibe como entrada los datos de entrada y produce los estados internos del codificador. Estos estados internos se utilizan como estado inicial del decodificador. A medida que el decodificador genera cada paso de la secuencia de salida, actualiza sus propios estados internos y utiliza la salida generada como entrada para el siguiente paso.
 
 El proceso sería: empezar con una secuencia objetivo de tamaño 1 (solo el carácter de inicio de secuencia), ir pasando los vectores de estado y la secuencia objetivo de 1 carácter al decodificador para producir predicciones para el siguiente carácter, mostrar el siguiente carácter usando estas predicciones (se usa argmax), agregar el carácter muestreado a la secuencia de destino y repetir hasta que se genere el carácter de fin de secuencia o se llegue al límite de caracteres.
 
-## ENTRENAMIENTO
+## Training process
 Inicialmente, tuvimos que pensar que estrategia en cuanto a bloques y épocas podíamos seguir para realizar nuestro training. Decidimos entrenar para cada bloque, durante varias épocas, 5. El modelo veía los datos muchas veces de un determinado bloque en vez de ir viendo a menudo los otros datos del siguiente; entonces, cuando saltaba al otro bloque, el modelo se había sobre ajustado demasiado a los datos del anterior bloque. Podríamos decir que memorizaba los datos del entrenamiento de ese bloque en lugar de aprender de ellos. Esto lo íbamos viendo en las gráficas que iban saliendo en el Wandb, con unos picos bastante pronunciados de bajada de accuracy e incremento de la loss. 
 
 Viendo que no generalizaba bien con esta estrategia de varias épocas por bloques, decidimos probar con una alternativa opuesta. En este caso se trataría de leer una vez un bloque, y entrenar el modelo con este; de esta forma, ir pasando de bloque en bloque, y cuando ya se hayan leído todos los bloques, eso ya representaría una época entera. De esta forma, se entrenaba el modelo adoptando una estrategia BFS (en el sentido que se exploran primero todos los lotes) y aprendía progresivamente de cada bloque, sin sobre ajustarse a ninguno,ya que no tiene la ‘oportunidad’ de memorizar tanto los datos de cada bloque, en cambio ve una variedad más amplia de datos en una época. 
@@ -53,7 +59,7 @@ Para visualizar mejor las diferencias que hemos comentado entre nuestro primer i
 
 <img width="600" alt="image" src="https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/e71a5584-9521-45f3-b285-1f8300df34bf">
 
-## MEMORIA
+## Memory
 Partiendo del proyecto usado como punto inicial, primero se tuvo que resolver un problema de memoria, con 139705 muestras en el entrenamiento, las máquinas virtuales alcanzaban la capacidad máxima de memoria en nuestra GPU abortando el proceso y haciendo que no se pudiera entrenar el conjunto de datos completo de una vez.
 Para solucionar este problema decidimos seguir un enfoque llamado “batch-training”. Este consiste en entrenar nuestro modelo usando lotes (batches) de datos en vez de procesar el conjunto de datos entero de una tirada. En este proceso, los datos de entrenamiento se dividen en subconjuntos más pequeños de datos llamados lotes, y los parámetros del modelo se actualizan en los gradientes calculados en cada lote.
 
@@ -67,7 +73,7 @@ Optamos también por crear un data loader para generar lotes de datos para el en
 
 Para poder cuantificar la magnitud de la complejidad del problema, utilizamos varios comandos en terminal. Con el model summary, pudimos ver que nuestro modelo, con nuestro latent dim base, tiene prácticamente 10 millones de parámetros. Esto implica que todos los cálculos que tengan que ver con parámetros y actualizaciones, ocupan mucha memoria; demostrando así que se trata de un modelo bastante grande, a nuestro parecer. Es por ello, que como mencionaremos más adelante, consideramos en simplificar el modelo disminuyendo la cantidad de características internas que el modelo utiliza para representar los datos.
 
-## OVERFITTING
+## Overfitting
 Durante todo este proyecto, el overfitting ha estado presente en todo momento.  A pesar de haber solucionado un poco el problema en cierta medida, bien es cierto que no está del todo solucionado como se podrá ver en las gráficas que pondremos a continuación.
 
 Al ajustarse demasiado el modelo a los datos de nuestro conjunto de training, barajamos diferentes opciones para de alguna manera, simplificar nuestro modelo: drop out y disminución del latent dim.
@@ -80,7 +86,7 @@ Podemos ver en la gráficas del WandB, que aunque a partir de ciertas iteracione
 
 <img width="600" alt="image" src="https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/2aa95724-aa65-49a3-bcca-75f8edac270c">
 
-## Resultados (Gráficas y predicciones)
+## Results (Graphs and predicitions)
 Una vez aplicados los cambios relativos al overfitting, decidimos también aplicar cambios en la arquitectura e hiperparámetros para mejorar el código de starting point. La primera decisión que tomamos fue probar una ejecución tanto con las capas de LSTM como con las de GRU para determinar cuáles son las que mejor se ajustaban a nuestro modelo y con las que obteníamos mejores resultados.
 
 ![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133141608/54df1617-5b12-4ead-821b-95adb818bf25)
@@ -123,7 +129,7 @@ Vemos que cuando se usa el dataset en castellano, si queremos predecir una palab
 
 Vemos que sucede lo mismo para el caso del finlandés, una palabra sencilla la predice bien, una más elaborada ya no (la traducción de la segunda al castellano es me duele la pierna, que obviamente no es la traducción de My name is). Cabe añadir, que estos resultados al menos nos dan en el idioma correcto, y que estas tienen sentido, ya que las primeras predicciones ni formaban parte de ningún idioma ni tenían significado.
 
-## Conclusiones
+## Conclusions
 
 Como conclusiones del proyecto, creemos haber realizado un buen trabajo, mejorando significativamente el punto inicial, pese a no haber obtenido ni mucha precisión ni grandes predicciones. Consideramos haber cumplido los objetivos que nos propusimos al inicio del proyecto y hemos gestionado los problemas que nos han ido surgiendo a lo largo del proyecto de la mejor forma que hemos podido. Creemos que la memoria ha sido un limitante a la hora de hacer el proyecto, muchas ejecuciones largas se interrumpían o se “morían” a mitad por no tener suficiente memoria. El no haber podido usar la cantidad total de datos creemos que puede haber influido también a que el modelo no haya aprendido patrones complejos que mejorarían las predicciones.
 
