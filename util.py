@@ -199,7 +199,7 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
     encoder_states = [state_h, state_c]
 
-    encoder_outputs = BatchNormalization()(encoder_outputs)
+    #encoder_outputs = BatchNormalization()(encoder_outputs)
 
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
     decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True)
