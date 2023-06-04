@@ -1,7 +1,21 @@
 from util import *
+from keras.utils import Sequence
+import tensorflow as tf
 
-#maquina = "Linux" #remoto 
-maquina = "Windows" #local Albert y Miguel
+def data_generator(data_path, batch_size):
+    start_index = 0
+    while True:
+        # Load a batch of data
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
+        # Yield the batch of data
+        yield [encoder_input_data, decoder_input_data], decoder_target_data
+        
+        # Update the start index for the next batch
+        start_index += batch_size
+
+
+maquina = "Linux" #remoto 
+# maquina = "Windows" #local Albert y Miguel
 #maquina = "MAC"
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
@@ -9,15 +23,27 @@ maquina = "Windows" #local Albert y Miguel
 usuario = "apuma"
 #usuario = "carlosletaalfonso"
 
+start_index = 0
+batch_size = 20000
 
-#load the data and format  them for being processed
-encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
+encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
 
-# we build the model
+# construïm el model amb totes les dades
 model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense=modelTranslation(num_encoder_tokens,num_decoder_tokens)
+model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=["accuracy"])
 
-# we train it
-trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data)
+# DATA LOADER
+generator = data_generator(data_path, batch_size)
+
+for epoch in range(3):
+    for step in range(4):        
+        # Load the next batch of data from the generator
+        data_batch = next(generator)
+        encoder_input_data, decoder_input_data, decoder_target_data = data_batch[0][0], data_batch[0][1], data_batch[1]        
+        # Train the model with the batch of data
+        print("ÈPOCA:", epoch)
+        trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data, epoch) # li passem l'epoch per a calcular el lr
+
 
 # we build the final model for the inference (slightly different) and we save it
 encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense)

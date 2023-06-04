@@ -1,25 +1,28 @@
 from __future__ import print_function
 
 from keras.models import Model
-from keras.layers import Input, LSTM, Dense, GRU
+from keras.layers import Input, LSTM, Dense, GRU, Dropout, BatchNormalization
 from keras.models import load_model
-from keras.callbacks import TensorBoard
+# from keras.callbacks import TensorBoard
 import numpy as np
 import pickle
 import os
 import wandb
+from keras.callbacks import LearningRateScheduler
+from nltk.translate.bleu_score import sentence_bleu
+import tensorflow as tf
 
-batch_size = 128  # Batch size for training.
-epochs = 4  # Number of epochs to train for.
-latent_dim = 1024#256  # Latent dimensionality of the encoding space.
-num_samples = 30000  # Number of samples to train on. 145437
+batch = 128  # Batch size for training.
+epochs = 6  # Number of epochs to train for.
+latent_dim = 512  # Latent dimensionality of the encoding space. 1024
+num_samples = 80000 # Number of samples to train on. 139705
 
-#maquina = "Linux" #remoto 
-maquina = "Windows" #local Albert y Miguel
+maquina = "Linux" #remoto 
+#maquina = "Windows" #local Albert y Miguel
 #maquina = "MAC"
 
 # Path to the data txt file on disk.
-data_path = 'cat-eng/cat.txt' # to replace by the actual dataset name
+data_path = 'spa-eng/spa.txt' # to replace by the actual dataset name
 encoder_path='encoder_modelPredTranslation.h5'
 decoder_path='decoder_modelPredTranslation.h5'
 
@@ -36,11 +39,45 @@ else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
 
 
-def prepareData(data_path):
-    input_characters,target_characters,input_texts,target_texts=extractChar(data_path)
-    encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,num_encoder_tokens,num_decoder_tokens,num_decoder_tokens,max_encoder_seq_length = encodingChar(input_characters,target_characters,input_texts,target_texts)
+# Definición de la métrica BLEU
+def bleu_score(y_true, y_pred):
+    tf.compat.v1.enable_eager_execution()
+    # Asegurarse de que las secuencias sean listas de palabras
+    y_true = tf.keras.backend.cast(y_true, dtype=tf.string)
+    y_pred = tf.keras.backend.cast(y_pred, dtype=tf.string)
     
-    return encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,num_decoder_tokens,max_encoder_seq_length
+    # Obtener el número de muestras en el lote
+    batch_size = tf.shape(y_true)[0]
+    
+    # Inicializar la puntuación BLEU acumulada
+    bleu_total = 0.0
+    
+    # Calcular la puntuación BLEU para cada muestra en el lote
+    for i in range(batch_size):
+        reference = tf.keras.backend.get_value(y_true[i]).decode('utf-8').split()# Secuencia de referencia
+        hypothesis = tf.keras.backend.get_value(y_pred[i]).decode('utf-8').split()# Secuencia generada por el modelo
+        bleu = sentence_bleu([reference], hypothesis)  # Cálculo de la puntuación BLEU
+        bleu_total += bleu
+    
+    # Calcular el promedio de las puntuaciones BLEU
+    bleu_avg = bleu_total / batch_size
+    
+    return bleu_avg
+
+def schedule_learning_rate(epoch):
+    lr = 0.01 * 0.001 ** epoch
+
+    return lr
+
+def prepareData(data_path, start_index=None, batch_size=None):
+    if batch_size:
+        input_characters,target_characters,input_texts,target_texts=extractChar_batch(data_path, start_index, batch_size)
+    else:
+        input_characters,target_characters,input_texts,target_texts=extractChar(data_path)
+    
+    encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length = encodingChar(input_characters,target_characters,input_texts,target_texts)
+    
+    return encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
 
 def extractChar(data_path,exchangeLanguage=False):
     # We extract the data (Sentence1 \t Sentence 2) from the anki text file
@@ -48,9 +85,9 @@ def extractChar(data_path,exchangeLanguage=False):
     target_texts = [] # seqüencies traduides
     input_characters = set() # caracters o simbols únics de les seqüencies per traduir
     target_characters = set() # caracters o simbols únics de les seqüencies traduides
-    lines = open(data_path).read().split('\n')
+    lines = open(data_path, encoding='utf-8').read().split('\n')
     print(str(len(lines) - 1))
-    if (exchangeLanguage==False): # if true, intercanvia idioma d'entrada i destí
+    if (exchangeLanguage==False):
         for line in lines[: min(num_samples, len(lines) - 1)]:
             input_text, target_text = line.split('\t')[0], line.split('\t')[1]
             target_text = '\t' + target_text + '\n'
@@ -63,7 +100,7 @@ def extractChar(data_path,exchangeLanguage=False):
                 if char not in target_characters:
                     target_characters.add(char)
 
-        input_characters = sorted(list(input_characters)) # ho passem a llista i ordenada
+        input_characters = sorted(list(input_characters))
         target_characters = sorted(list(target_characters))
 
     else:
@@ -72,7 +109,7 @@ def extractChar(data_path,exchangeLanguage=False):
             target_text = '\t' + target_text + '\n'
             input_texts.append(input_text)
             target_texts.append(target_text)
-            for char in input_text: # agafo la seqüencia i separo caracter a caracter
+            for char in input_text:
                 if char not in input_characters:
                     input_characters.add(char)
             for char in target_text:
@@ -83,6 +120,48 @@ def extractChar(data_path,exchangeLanguage=False):
         target_characters = sorted(list(target_characters))
 
     return input_characters,target_characters,input_texts,target_texts
+
+def extractChar_batch(data_path, input_characters, target_characters,exchangeLanguage=False, start_index=0, batch_size=20000):
+    input_texts = []
+    target_texts = []
+    input_characters = set()
+    target_characters = set()
+    lines = open(data_path, encoding='utf-8').read().split('\n')
+    print(str(len(lines) - 1))
+
+    num_samples = min(start_index + batch_size, len(lines) - 1) 
+
+    if (exchangeLanguage == False):
+        for line in lines[start_index:num_samples]:
+            input_text, target_text = line.split('\t')[0], line.split('\t')[1]
+            target_text = '\t' + target_text + '\n'
+            input_texts.append(input_text)
+            target_texts.append(target_text)
+            for char in input_text:
+                if char not in input_characters:
+                    input_characters.add(char)
+            for char in target_text:
+                if char not in target_characters:
+                    target_characters.add(char)
+
+    else:
+        for line in lines[start_index:num_samples]:
+            target_text, input_text, _ = line.split('\t')
+            target_text = '\t' + target_text + '\n'
+            input_texts.append(input_text)
+            target_texts.append(target_text)
+            for char in input_text:
+                if char not in input_characters:
+                    input_characters.add(char)
+            for char in target_text:
+                if char not in target_characters:
+                    target_characters.add(char)
+
+    input_characters = sorted(list(input_characters))
+    target_characters = sorted(list(target_characters))
+
+    return input_characters, target_characters, input_texts, target_texts
+
     
 def encodingChar(input_characters,target_characters,input_texts,target_texts):
 # We encode the dataset in a format that can be used by our Seq2Seq model (hot encoding).
@@ -92,8 +171,8 @@ def encodingChar(input_characters,target_characters,input_texts,target_texts):
 # 2. We create a dictonary for both language
 # 3. We store their encoding and return them and their respective dictonary
     
-    num_encoder_tokens = len(input_characters) # numero total de caracters unics en les seqüencies de entrada (util per dimensio vocetor one hot, per representar cada caracter en seqüencies de entrada)
-    num_decoder_tokens = len(target_characters) # numero total de caracters unics en les seqüencies de sortida
+    num_encoder_tokens = 91 #len(input_characters) # numero total de caracters unics en les seqüencies de entrada (util per dimensio vocetor one hot, per representar cada caracter en seqüencies de entrada)
+    num_decoder_tokens = 110 #len(target_characters) # numero total de caracters unics en les seqüencies de sortida
     max_encoder_seq_length = max([len(txt) for txt in input_texts]) # longitud de la seqüencia de entrada més llarga (pasos de temps tindra la xarxa)
     max_decoder_seq_length = max([len(txt) for txt in target_texts]) # longitud de la seqüencia de sortida més llarga
     print('Number of num_encoder_tokens:', num_encoder_tokens)
@@ -119,7 +198,7 @@ def encodingChar(input_characters,target_characters,input_texts,target_texts):
                 decoder_target_data[i, t - 1, target_token_index[char]] = 1.
 
 
-    return encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,num_encoder_tokens,num_decoder_tokens,num_decoder_tokens,max_encoder_seq_length
+    return encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
 	
 def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
 # We crete the model 1 encoder(gru) + 1 decode (gru) + 1 Dense layer + softmax
@@ -139,12 +218,13 @@ def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_gru,decoder_dense
 	
 def modelTranslation(num_encoder_tokens,num_decoder_tokens):
-# We crete the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
-
+# We create the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
     encoder = LSTM(latent_dim, return_state=True)
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
     encoder_states = [state_h, state_c]
+
+    encoder_outputs = BatchNormalization()(encoder_outputs)
 
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
     decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True)
@@ -153,11 +233,15 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
     decoder_outputs = decoder_dense(decoder_outputs)
 
+    # decoder_outputs = BatchNormalization()(decoder_outputs)
+
+    decoder_outputs = Dropout(0.5)(decoder_outputs)
+
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
     
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense
 
-def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data):
+def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, i): # i = epoch actual
 # We load tensorboad
 # We train the model
     if maquina == "Linux":
@@ -167,23 +251,21 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     else:
         LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/log" #### local leta
         
-    # tbCallBack = TensorBoard(log_dir=LOG_PATH, histogram_freq=0, write_graph=True, write_images=True)
-
     # Run training
     wandb.init(project="XNAP-PROJECT-ED_GROUP_03")
     wandb_callback = wandb.keras.WandbCallback()
     
-    wandb.config.batch_size = batch_size
+    wandb.config.batch_size = batch
     wandb.config.epochs = epochs
-    wandb.config.validation_split = 0.01
+    wandb.config.validation_split = 0.05
 
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=['accuracy'])
-    # entrenament del model. les seqúencies de entrada al codificador i al deco es pasan com a llista, i les seqüencies objectiu com a segon argument.
+    lr_scheduler = LearningRateScheduler(schedule_learning_rate) 
+
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
-              batch_size=batch_size,
+              batch_size=batch,
               epochs=epochs,
-              validation_split=0.01,
-              callbacks = [wandb_callback])
+              validation_split=0.05,
+              callbacks = [lr_scheduler]) #wandb_callback,
     
 def generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense):
 # Once the model is trained, we connect the encoder/decoder and we create a new model
@@ -216,15 +298,12 @@ def loadEncoderDecoderModel():
 
 def decode_sequence(input_seq,encoder_model,decoder_model,num_decoder_tokens,target_token_index,reverse_target_char_index):
 # We run the model and predict the translated sentence
-
     # We encode the input
     states_value = encoder_model.predict(input_seq)
-
     
     target_seq = np.zeros((1, 1, num_decoder_tokens))
     
     target_seq[0, 0, target_token_index['\t']] = 1.
-
 
     stop_condition = False
     decoded_sentence = ''
@@ -279,4 +358,3 @@ def getChar2encoding(filename):
     target_token_index = pickle.load(f)
     f.close()
     return input_token_index,max_encoder_seq_length,num_encoder_tokens,reverse_target_char_index,num_decoder_tokens,target_token_index
-
