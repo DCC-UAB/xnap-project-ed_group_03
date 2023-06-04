@@ -3,7 +3,7 @@ from __future__ import print_function
 from keras.models import Model
 from keras.layers import Input, LSTM, Dense, GRU, Dropout, BatchNormalization
 from keras.models import load_model
-# from keras.callbacks import TensorBoard
+from keras import regularizers
 import numpy as np
 import pickle
 import os
@@ -13,8 +13,8 @@ from nltk.translate.bleu_score import sentence_bleu
 import tensorflow as tf
 
 batch = 128  # Batch size for training.
-epochs = 6  # Number of epochs to train for.
-latent_dim = 512  # Latent dimensionality of the encoding space. 1024
+epochs_batch = 1  # Number of epochs to train each batch for.
+latent_dim = 256  # Latent dimensionality of the encoding space. 1024
 num_samples = 80000 # Number of samples to train on. 139705
 
 maquina = "Linux" #remoto 
@@ -38,31 +38,6 @@ elif maquina == "Windows":
 else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
 
-
-# Definición de la métrica BLEU
-def bleu_score(y_true, y_pred):
-    tf.compat.v1.enable_eager_execution()
-    # Asegurarse de que las secuencias sean listas de palabras
-    y_true = tf.keras.backend.cast(y_true, dtype=tf.string)
-    y_pred = tf.keras.backend.cast(y_pred, dtype=tf.string)
-    
-    # Obtener el número de muestras en el lote
-    batch_size = tf.shape(y_true)[0]
-    
-    # Inicializar la puntuación BLEU acumulada
-    bleu_total = 0.0
-    
-    # Calcular la puntuación BLEU para cada muestra en el lote
-    for i in range(batch_size):
-        reference = tf.keras.backend.get_value(y_true[i]).decode('utf-8').split()# Secuencia de referencia
-        hypothesis = tf.keras.backend.get_value(y_pred[i]).decode('utf-8').split()# Secuencia generada por el modelo
-        bleu = sentence_bleu([reference], hypothesis)  # Cálculo de la puntuación BLEU
-        bleu_total += bleu
-    
-    # Calcular el promedio de las puntuaciones BLEU
-    bleu_avg = bleu_total / batch_size
-    
-    return bleu_avg
 
 def schedule_learning_rate(epoch):
     lr = 0.01 * 0.001 ** epoch
@@ -220,7 +195,7 @@ def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
 def modelTranslation(num_encoder_tokens,num_decoder_tokens):
 # We create the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
-    encoder = LSTM(latent_dim, return_state=True)
+    encoder = LSTM(latent_dim, return_state=True) #, kernel_regularizer=regularizers.l2(0.01)
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
     encoder_states = [state_h, state_c]
 
@@ -233,15 +208,13 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
     decoder_outputs = decoder_dense(decoder_outputs)
 
-    # decoder_outputs = BatchNormalization()(decoder_outputs)
-
     decoder_outputs = Dropout(0.5)(decoder_outputs)
 
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
     
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense
 
-def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, i): # i = epoch actual
+def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data):
 # We load tensorboad
 # We train the model
     if maquina == "Linux":
@@ -256,16 +229,16 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb_callback = wandb.keras.WandbCallback()
     
     wandb.config.batch_size = batch
-    wandb.config.epochs = epochs
+    wandb.config.epochs = epochs_batch
     wandb.config.validation_split = 0.05
 
     lr_scheduler = LearningRateScheduler(schedule_learning_rate) 
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,
-              epochs=epochs,
+              epochs=epochs_batch,
               validation_split=0.05,
-              callbacks = [lr_scheduler]) #wandb_callback,
+              callbacks = [wandb_callback,lr_scheduler]) 
     
 def generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense):
 # Once the model is trained, we connect the encoder/decoder and we create a new model

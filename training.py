@@ -6,9 +6,9 @@ def data_generator(data_path, batch_size):
     start_index = 0
     while True:
         # Load a batch of data
-        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,_,_,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
         # Yield the batch of data
-        yield [encoder_input_data, decoder_input_data], decoder_target_data
+        yield [encoder_input_data, decoder_input_data], decoder_target_data,input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
         
         # Update the start index for the next batch
         start_index += batch_size
@@ -25,6 +25,8 @@ usuario = "apuma"
 
 start_index = 0
 batch_size = 20000
+epochs = 5
+steps = 4
 
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
 
@@ -35,14 +37,14 @@ model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=["accura
 # DATA LOADER
 generator = data_generator(data_path, batch_size)
 
-for epoch in range(3):
-    for step in range(4):        
+for epoch in range(epochs):
+    for step in range(steps):
         # Load the next batch of data from the generator
         data_batch = next(generator)
-        encoder_input_data, decoder_input_data, decoder_target_data = data_batch[0][0], data_batch[0][1], data_batch[1]        
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length = data_batch[0][0], data_batch[0][1], data_batch[1], data_batch[2], data_batch[3], data_batch[4], data_batch[5], data_batch[6], data_batch[7], data_batch[8]
         # Train the model with the batch of data
         print("ÈPOCA:", epoch)
-        trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data, epoch) # li passem l'epoch per a calcular el lr
+        trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data)
 
 
 # we build the final model for the inference (slightly different) and we save it
