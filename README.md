@@ -15,6 +15,19 @@ Finalmente, los archivos .py (predictionTranslation, util y training) son los ar
 - Ejecute el archivo training.py para entrenar el modelo.
 - Para hacer las predicciones, ejecute predictionTranslation.py una vez el modelo se ha entrenado.
 
+##OBJETIVOS
+El objetivo principal de este proyecto es la creación y optimización de un modelo de traducción automática basado en técnicas de Deep Learning. En este contexto, se plantea el desafío o reto de desarrollar un modelo que sea capaz de trabajar con varios idiomas, principalmente castellano e inglés, incluyendo otros idiomas como catalán, finlandés…, es decir, aquellos que utilizan nuestro abecedario occidental; y proporcionar traducciones de una calidad razonable.
+
+Sin embargo, el enfoque del proyecto no se limita solo a la creación del modelo, sino que también se enfoca hacia la mejora continua de su rendimiento. Este enfoque implica una búsqueda constante para aumentar la accuracy del modelo, experimentando con diferentes arquitecturas de red, ajustando hiper parámetros, y aplicando técnicas para mitigar el overfitting. 
+
+Asimismo, se le da una especial atención a la mitigación del overfitting. Dado que los modelos de Deep Learning son bastante propensos a este problema, es importante implementar estrategias efectivas para poder reducirlo. El proyecto se compromete a trabajar en la aplicación de diferentes técnicas y métodos para mejorar la capacidad de generalización del modelo, y asegurar su desempeño robusto no solo con los datos de entrenamiento, sino también con datos no vistos.
+
+El proyecto tiene como objetivo ofrecer un seguimiento visual y en tiempo real de las métricas de rendimiento del modelo. Para ello, se utilizará la plataforma Weights & Biases, lo que nos permitirá tener una visión clara del comportamiento del modelo durante el entrenamiento, y facilitará la identificación de tendencias y problemas, así como la toma de decisiones sobre los pasos a seguir para optimizar el modelo.
+
+También, ponemos especial énfasis en la gestión eficiente de la memoria. Los desafíos técnicos asociados con la memoria durante el entrenamiento del modelo son un tema clave en este proyecto, debido a su magnitud y limitaciones, y se buscarán soluciones para resolver cualquier problema de memoria que pueda surgir, optimizando su uso para garantizar un proceso de entrenamiento fluido y sin demasiadas interrupciones.
+
+Finalmente, otro de los objetivos transversales es el aprendizaje y uso efectivo de GitHub. Dado que esta es una herramienta nueva para nuestro equipo, el proyecto se convierte en una oportunidad para familiarizarnos con esta plataforma de control de versiones. Nos esforzaremos por aprender a utilizar sus funcionalidades para un trabajo colaborativo eficiente y el seguimiento de cambios en el código.
+
 ## Dataset
 Para nuestro proyecto utilizamos el dataset Anki. Este dataset ha sido ampliamente utilizado en la traducción automática mediante redes neuronales. Se constituye en una recopilación de oraciones y frases en múltiples idiomas utilizado para entrenar y evaluar modelos de traducción automática.
 
