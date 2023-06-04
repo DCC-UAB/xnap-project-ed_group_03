@@ -15,7 +15,7 @@ Finalmente, los archivos .py (predictionTranslation, util y training) son los ar
 - Ejecute el archivo training.py para entrenar el modelo.
 - Para hacer las predicciones, ejecute predictionTranslation.py una vez el modelo se ha entrenado.
 
-##OBJETIVOS
+## OBJETIVOS
 El objetivo principal de este proyecto es la creación y optimización de un modelo de traducción automática basado en técnicas de Deep Learning. En este contexto, se plantea el desafío o reto de desarrollar un modelo que sea capaz de trabajar con varios idiomas, principalmente castellano e inglés, incluyendo otros idiomas como catalán, finlandés…, es decir, aquellos que utilizan nuestro abecedario occidental; y proporcionar traducciones de una calidad razonable.
 
 Sin embargo, el enfoque del proyecto no se limita solo a la creación del modelo, sino que también se enfoca hacia la mejora continua de su rendimiento. Este enfoque implica una búsqueda constante para aumentar la accuracy del modelo, experimentando con diferentes arquitecturas de red, ajustando hiper parámetros, y aplicando técnicas para mitigar el overfitting. 
