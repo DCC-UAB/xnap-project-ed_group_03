@@ -11,11 +11,14 @@ import wandb
 from keras.callbacks import LearningRateScheduler
 from nltk.translate.bleu_score import sentence_bleu
 import tensorflow as tf
+from keras.callbacks import ReduceLROnPlateau
 
-batch = 128  # Batch size for training.
+
+
+batch = 256  # Batch size for training.
 epochs_batch = 1  # Number of epochs to train each batch for.
 latent_dim = 256  # Latent dimensionality of the encoding space. 1024
-num_samples = 80000 # Number of samples to train on. 139705
+num_samples = 130000 # Number of samples to train on. 139705
 
 maquina = "Linux" #remoto 
 #maquina = "Windows" #local Albert y Miguel
@@ -39,9 +42,9 @@ else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
 
 
+
 def schedule_learning_rate(epoch):
     lr = 0.01 * 0.001 ** epoch
-
     return lr
 
 def prepareData(data_path, start_index=None, batch_size=None):
@@ -233,6 +236,10 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb.config.validation_split = 0.05
 
     lr_scheduler = LearningRateScheduler(schedule_learning_rate) 
+    
+    #Plateau lr
+    #lr_scheduler = ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1, patience = 2, verbose = 1, min_lr = 0.001)
+
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,

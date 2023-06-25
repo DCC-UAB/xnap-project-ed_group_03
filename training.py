@@ -1,17 +1,35 @@
 from util import *
 from keras.utils import Sequence
 import tensorflow as tf
+import time
+from tensorflow.keras.callbacks import EarlyStopping
+import random
+
+# Crear EarlyStopping
+early_stopping = EarlyStopping(monitor='val_loss', patience=5) #que pare si la val_loss no cambia en 5 épocas
+
+start_time = time.time()
+
 
 def data_generator(data_path, batch_size):
     start_index = 0
+    index_list = [start_index+(batch_size*x) for x in range(13)] #lista index bloques, tenemos 13 bloques con batch size de 10000 y 130000 datos
+    
+    random.shuffle(index_list)
     while True:
+        # Obtener el índice del bloque de datos correspondiente después del shuffle
+        current_index = index_list[start_index % 13] #num_ blocks = 13
+        
         # Load a batch of data
-        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=current_index, batch_size=batch_size)
+        
+        start_index += 1
+
         # Yield the batch of data
         yield [encoder_input_data, decoder_input_data], decoder_target_data,input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
         
-        # Update the start index for the next batch
-        start_index += batch_size
+        # # Update the start index for the next batch
+        # start_index += batch_size
 
 
 maquina = "Linux" #remoto 
@@ -24,8 +42,8 @@ usuario = "apuma"
 #usuario = "carlosletaalfonso"
 
 start_index = 0
-batch_size = 20000
-epochs = 5
+batch_size = 10000
+epochs = 10
 steps = 4
 
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
@@ -37,8 +55,8 @@ model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=["accura
 # DATA LOADER
 generator = data_generator(data_path, batch_size)
 
-for epoch in range(epochs):
-    for step in range(steps):
+for epoch in range(9999): #epochs
+    for step in range(steps): #steps
         # Load the next batch of data from the generator
         data_batch = next(generator)
         encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length = data_batch[0][0], data_batch[0][1], data_batch[1], data_batch[2], data_batch[3], data_batch[4], data_batch[5], data_batch[6], data_batch[7], data_batch[8]
@@ -46,6 +64,14 @@ for epoch in range(epochs):
         print("ÈPOCA:", epoch)
         trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data)
 
+    # Verificar el tiempo transcurrido
+    elapsed_time = time.time() - start_time
+    if elapsed_time >= 1800: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
+        break
+
+    # # Realizar verificación temprana
+    # if early_stopping.should_stop():
+    #     break
 
 # we build the final model for the inference (slightly different) and we save it
 encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense)
