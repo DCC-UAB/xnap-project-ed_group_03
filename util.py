@@ -43,9 +43,19 @@ else:
 
 
 
+def scheduler_decay(epoch, lr):
+    decay_rate = 0.1
+    decay_step = 10
+    if epoch % decay_step == 0 and epoch:
+        return lr * decay_rate
+    return max(lr, 0.001)  # Aquí 0.001 es el learning rate mínimo
+
+
+'''
 def schedule_learning_rate(epoch):
     lr = 0.01 * 0.001 ** epoch
     return lr
+'''
 
 def prepareData(data_path, start_index=None, batch_size=None):
     if batch_size:
@@ -235,7 +245,7 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb.config.epochs = epochs_batch
     wandb.config.validation_split = 0.05
 
-    lr_scheduler = LearningRateScheduler(schedule_learning_rate) 
+    lr_scheduler = LearningRateScheduler(scheduler_decay) 
     
     #Plateau lr
     #lr_scheduler = ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1, patience = 2, verbose = 1, min_lr = 0.001)
