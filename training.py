@@ -13,23 +13,14 @@ start_time = time.time()
 
 def data_generator(data_path, batch_size):
     start_index = 0
-    index_list = [start_index+(batch_size*x) for x in range(13)] #lista index bloques, tenemos 13 bloques con batch size de 10000 y 130000 datos
-    
-    random.shuffle(index_list)
     while True:
-        # Obtener el índice del bloque de datos correspondiente después del shuffle
-        current_index = index_list[start_index % 13] #num_ blocks = 13
-        
         # Load a batch of data
-        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=current_index, batch_size=batch_size)
-        
-        start_index += 1
-
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
         # Yield the batch of data
         yield [encoder_input_data, decoder_input_data], decoder_target_data,input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
         
-        # # Update the start index for the next batch
-        # start_index += batch_size
+        # Update the start index for the next batch
+        start_index += batch_size
 
 
 maquina = "Linux" #remoto 
