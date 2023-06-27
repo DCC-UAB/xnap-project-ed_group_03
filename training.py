@@ -57,8 +57,9 @@ for epoch in range(9999): #epochs
 
     # Verificar el tiempo transcurrido
     elapsed_time = time.time() - start_time
-    if elapsed_time >= 1800: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
+    if elapsed_time >= 600: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
         break
+
 
     # # Realizar verificación temprana
     # if early_stopping.should_stop():

@@ -12,7 +12,8 @@ from keras.callbacks import LearningRateScheduler
 from nltk.translate.bleu_score import sentence_bleu
 import tensorflow as tf
 from keras.callbacks import ReduceLROnPlateau
-
+from keras.initializers import glorot_normal
+from keras.regularizers import L1L2
 
 
 batch = 256  # Batch size for training.
@@ -45,17 +46,17 @@ else:
 
 def scheduler_decay(epoch, lr):
     decay_rate = 0.1
-    decay_step = 10
+    decay_step = 2
     if epoch % decay_step == 0 and epoch:
         return lr * decay_rate
     return max(lr, 0.001)  # Aquí 0.001 es el learning rate mínimo
 
 
-'''
-def schedule_learning_rate(epoch):
+
+def schedule_learning_rate(epoch): #exponencial
     lr = 0.01 * 0.001 ** epoch
     return lr
-'''
+
 
 def prepareData(data_path, start_index=None, batch_size=None):
     if batch_size:
@@ -208,14 +209,19 @@ def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
 def modelTranslation(num_encoder_tokens,num_decoder_tokens):
 # We create the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
-    encoder = LSTM(latent_dim, return_state=True) #, kernel_regularizer=regularizers.l2(0.01)
+    #encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
+
+    encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer=regularizers.l2(0.01))
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
     encoder_states = [state_h, state_c]
 
     #encoder_outputs = BatchNormalization()(encoder_outputs)
 
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
-    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True)
+    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l2(0.01))
+
+    #decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None), kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
+
     decoder_outputs, _, _ = decoder_lstm(decoder_inputs,
                                          initial_state=encoder_states)
     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
@@ -245,8 +251,8 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb.config.epochs = epochs_batch
     wandb.config.validation_split = 0.05
 
-    lr_scheduler = LearningRateScheduler(scheduler_decay) 
-    
+    #lr_scheduler = LearningRateScheduler(scheduler_decay) #decay 
+    lr_scheduler = LearningRateScheduler(schedule_learning_rate) #exponencial
     #Plateau lr
     #lr_scheduler = ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1, patience = 2, verbose = 1, min_lr = 0.001)
 
