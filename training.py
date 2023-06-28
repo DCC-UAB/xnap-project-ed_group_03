@@ -10,7 +10,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=5) #que pare si la v
 
 start_time = time.time()
 
-
+'''
 def data_generator(data_path, batch_size):
     start_index = 0
     while True:
@@ -21,15 +21,37 @@ def data_generator(data_path, batch_size):
         
         # Update the start index for the next batch
         start_index += batch_size
+'''
+
+
+def data_generator(data_path, batch_size):
+    start_index = 0
+    while True:
+        # Load a batch of data
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
+        
+        # Aleatoritzamos el orden de los datos
+        data_size = len(encoder_input_data)
+        order = np.random.permutation(data_size)
+        encoder_input_data = encoder_input_data[order]
+        decoder_input_data = decoder_input_data[order]
+        decoder_target_data = decoder_target_data[order]
+
+        # Yield the batch of data
+        yield [encoder_input_data, decoder_input_data], decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
+
+        # Update the start index for the next batch
+        start_index += batch_size
+
 
 
 maquina = "Linux" #remoto 
 # maquina = "Windows" #local Albert y Miguel
-#maquina = "MAC"
+# maquina = "MAC"
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
 #usuario = "34606"
-usuario = "apuma"
+#usuario = "apuma"
 #usuario = "carlosletaalfonso"
 
 start_index = 0
