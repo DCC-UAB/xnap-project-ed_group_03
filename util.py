@@ -218,8 +218,8 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
     #encoder_outputs = BatchNormalization()(encoder_outputs)
 
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
-    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l2(0.01))
 
+    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l2(0.01))
     #decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None), kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
 
     decoder_outputs, _, _ = decoder_lstm(decoder_inputs,
