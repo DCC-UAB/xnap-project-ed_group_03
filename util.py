@@ -21,9 +21,9 @@ epochs_batch = 1  # Number of epochs to train each batch for.
 latent_dim = 256  # Latent dimensionality of the encoding space. 1024
 num_samples = 130000 # Number of samples to train on. 139705
 
-maquina = "Linux" #remoto 
+#maquina = "Linux" #remoto 
 #maquina = "Windows" #local Albert y Miguel
-#maquina = "MAC"
+maquina = "MAC"
 
 # Path to the data txt file on disk.
 data_path = 'spa-eng/spa.txt' # to replace by the actual dataset name
@@ -48,12 +48,12 @@ def schedule_learning_rate(epoch): #exponencial
     return lr
 
 def scheduler_decay(epoch, lr): # decay
-    decay_rate = 0.1
-    decay_step = 2
+    decay_rate = 0.95 # 0.1
+    decay_step = 50 # 2
     if epoch % decay_step == 0 and epoch:
         return lr * decay_rate
-    return max(lr, 0.001)  # Aquí 0.001 es el learning rate mínimo
-
+    #return max(lr, 0.0001) # 0.001 / Aquí es el learning rate mínimo 
+    return lr
 
 def prepareData(data_path, start_index=None, batch_size=None):
     if batch_size:

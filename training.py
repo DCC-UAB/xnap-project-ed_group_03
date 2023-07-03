@@ -42,9 +42,9 @@ def data_generator_basic(data_path, batch_size):
         start_index += batch_size
 
 
-maquina = "Linux" #remoto 
+#maquina = "Linux" #remoto 
 # maquina = "Windows" #local Albert y Miguel
-# maquina = "MAC"
+maquina = "MAC"
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
 #usuario = "34606"
@@ -76,7 +76,7 @@ for epoch in range(9999): #epochs
 
     # Verificar el tiempo transcurrido
     elapsed_time = time.time() - start_time
-    if elapsed_time >= 1200: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
+    if elapsed_time >= 5400: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
         break
 
 
