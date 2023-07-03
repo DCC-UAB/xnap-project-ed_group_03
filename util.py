@@ -9,7 +9,7 @@ import pickle
 import os
 import wandb
 from keras.callbacks import LearningRateScheduler
-from nltk.translate.bleu_score import sentence_bleu
+# from nltk.translate.bleu_score import sentence_bleu
 import tensorflow as tf
 from keras.callbacks import ReduceLROnPlateau
 from keras.initializers import glorot_normal
@@ -32,8 +32,8 @@ decoder_path='decoder_modelPredTranslation.h5'
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
 #usuario = "34606"
-usuario = "apuma"
-#usuario = "carlosletaalfonso"
+#usuario = "apuma"
+usuario = "carlosletaalfonso"
 
 if maquina == "Linux":
     LOG_PATH="/home/alumne/xnap-project-ed_group_03/log" #### remoto
@@ -43,19 +43,16 @@ else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
 
 
+def schedule_learning_rate(epoch): #exponencial
+    lr = 0.01 * 0.001 ** epoch
+    return lr
 
-def scheduler_decay(epoch, lr):
+def scheduler_decay(epoch, lr): # decay
     decay_rate = 0.1
     decay_step = 2
     if epoch % decay_step == 0 and epoch:
         return lr * decay_rate
     return max(lr, 0.001)  # Aquí 0.001 es el learning rate mínimo
-
-
-
-def schedule_learning_rate(epoch): #exponencial
-    lr = 0.01 * 0.001 ** epoch
-    return lr
 
 
 def prepareData(data_path, start_index=None, batch_size=None):
@@ -210,27 +207,23 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
 # We create the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
     #encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
-
-    encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer=regularizers.l2(0.01))
+    encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer=regularizers.l2(0.001))
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
     encoder_states = [state_h, state_c]
 
     #encoder_outputs = BatchNormalization()(encoder_outputs)
+    #encoder_outputs = Dropout(0.2)(encoder_outputs)
 
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
-
-    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l2(0.01))
+    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l2(0.001))
     #decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None), kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
-
-    decoder_outputs, _, _ = decoder_lstm(decoder_inputs,
-                                         initial_state=encoder_states)
+    decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
     decoder_outputs = decoder_dense(decoder_outputs)
 
-    decoder_outputs = Dropout(0.5)(decoder_outputs)
+    decoder_outputs = Dropout(0.2)(decoder_outputs)
 
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-    
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense
 
 def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data):
@@ -251,11 +244,10 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb.config.epochs = epochs_batch
     wandb.config.validation_split = 0.05
 
-    #lr_scheduler = LearningRateScheduler(scheduler_decay) #decay 
-    lr_scheduler = LearningRateScheduler(schedule_learning_rate) #exponencial
+    lr_scheduler = LearningRateScheduler(scheduler_decay) #decay 
+    # lr_scheduler = LearningRateScheduler(schedule_learning_rate) #exponencial
     #Plateau lr
     #lr_scheduler = ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1, patience = 2, verbose = 1, min_lr = 0.001)
-
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,

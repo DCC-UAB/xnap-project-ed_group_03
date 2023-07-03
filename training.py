@@ -10,21 +10,7 @@ early_stopping = EarlyStopping(monitor='val_loss', patience=5) #que pare si la v
 
 start_time = time.time()
 
-'''
-def data_generator(data_path, batch_size):
-    start_index = 0
-    while True:
-        # Load a batch of data
-        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
-        # Yield the batch of data
-        yield [encoder_input_data, decoder_input_data], decoder_target_data,input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
-        
-        # Update the start index for the next batch
-        start_index += batch_size
-'''
-
-
-def data_generator(data_path, batch_size):
+def data_generator_aleatoritzant(data_path, batch_size):
     start_index = 0
     while True:
         # Load a batch of data
@@ -44,6 +30,17 @@ def data_generator(data_path, batch_size):
         start_index += batch_size
 
 
+def data_generator_basic(data_path, batch_size):
+    start_index = 0
+    while True:
+        # Load a batch of data
+        encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path, start_index=start_index, batch_size=batch_size)
+        # Yield the batch of data
+        yield [encoder_input_data, decoder_input_data], decoder_target_data,input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length
+        
+        # Update the start index for the next batch
+        start_index += batch_size
+
 
 maquina = "Linux" #remoto 
 # maquina = "Windows" #local Albert y Miguel
@@ -52,10 +49,10 @@ maquina = "Linux" #remoto
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
 #usuario = "34606"
 #usuario = "apuma"
-#usuario = "carlosletaalfonso"
+usuario = "carlosletaalfonso"
 
 start_index = 0
-batch_size = 10000
+batch_size = 30000
 epochs = 10
 steps = 4
 
@@ -66,7 +63,7 @@ model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,
 model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=["accuracy"])
 
 # DATA LOADER
-generator = data_generator(data_path, batch_size)
+generator = data_generator_aleatoritzant(data_path, batch_size)
 
 for epoch in range(9999): #epochs
     for step in range(steps): #steps
@@ -79,7 +76,7 @@ for epoch in range(9999): #epochs
 
     # Verificar el tiempo transcurrido
     elapsed_time = time.time() - start_time
-    if elapsed_time >= 600: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
+    if elapsed_time >= 1200: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
         break
 
 
