@@ -8,7 +8,7 @@ import random
 # Crear EarlyStopping
 early_stopping = EarlyStopping(monitor='val_loss', patience=5) #que pare si la val_loss no cambia en 5 épocas
 
-start_time = time.time()
+#start_time = time.time()
 
 def data_generator_aleatoritzant(data_path, batch_size):
     start_index = 0
@@ -53,7 +53,7 @@ usuario = "carlosletaalfonso"
 
 start_index = 0
 batch_size = 30000
-epochs = 10
+epochs = 80
 steps = 4
 
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
@@ -65,7 +65,7 @@ model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=["accura
 # DATA LOADER
 generator = data_generator_aleatoritzant(data_path, batch_size)
 
-for epoch in range(9999): #epochs
+for epoch in range(epochs): #epochs
     for step in range(steps): #steps
         # Load the next batch of data from the generator
         data_batch = next(generator)
@@ -75,9 +75,9 @@ for epoch in range(9999): #epochs
         trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data)
 
     # Verificar el tiempo transcurrido
-    elapsed_time = time.time() - start_time
-    if elapsed_time >= 5400: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
-        break
+    #elapsed_time = time.time() - start_time
+    #if elapsed_time >= 1200: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
+        #break
 
 
     # # Realizar verificación temprana

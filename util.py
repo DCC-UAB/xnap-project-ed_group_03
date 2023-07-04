@@ -49,7 +49,7 @@ def schedule_learning_rate(epoch): #exponencial
 
 def scheduler_decay(epoch, lr): # decay
     decay_rate = 0.95 # 0.1
-    decay_step = 5 # 2
+    decay_step =  10 # 2
     if epoch % decay_step == 0 and epoch:
         return lr * decay_rate
     return max(lr, 0.001) # 0.001 / Aquí es el learning rate mínimo 
@@ -206,8 +206,9 @@ def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
 def modelTranslation(num_encoder_tokens,num_decoder_tokens):
 # We create the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
-    #encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
     encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer=regularizers.l2(0.001))
+    #encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer=regularizers.l1(0.001))
+    #encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
     encoder_states = [state_h, state_c]
 
@@ -216,6 +217,7 @@ def modelTranslation(num_encoder_tokens,num_decoder_tokens):
 
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
     decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l2(0.001))
+    #decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l1(0.001))
     #decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None), kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
     decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
