@@ -49,11 +49,11 @@ def schedule_learning_rate(epoch): #exponencial
 
 def scheduler_decay(epoch, lr): # decay
     decay_rate = 0.95 # 0.1
-    decay_step = 50 # 2
+    decay_step = 5 # 2
     if epoch % decay_step == 0 and epoch:
         return lr * decay_rate
-    #return max(lr, 0.0001) # 0.001 / Aquí es el learning rate mínimo 
-    return lr
+    return max(lr, 0.001) # 0.001 / Aquí es el learning rate mínimo 
+    # return lr
 
 def prepareData(data_path, start_index=None, batch_size=None):
     if batch_size:
@@ -247,7 +247,7 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     lr_scheduler = LearningRateScheduler(scheduler_decay) #decay 
     # lr_scheduler = LearningRateScheduler(schedule_learning_rate) #exponencial
     #Plateau lr
-    #lr_scheduler = ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1, patience = 2, verbose = 1, min_lr = 0.001)
+    #lr_scheduler = ReduceLROnPlateau(monitor = 'val_loss', factor = 0.5, patience = 10, verbose = 1, min_lr = 0.0001)
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,
