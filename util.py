@@ -18,23 +18,24 @@ from keras.regularizers import L1L2
 
 batch = 256  # Batch size for training.
 epochs_batch = 1  # Number of epochs to train each batch for.
-latent_dim = 256  # Latent dimensionality of the encoding space. 1024
+latent_dim = 512  # Latent dimensionality of the encoding space. 1024
 num_samples = 130000 # Number of samples to train on. 139705
 num_hidden_units = 110
 
-maquina = "Linux" #remoto 
+#maquina = "Linux" #remoto 
 #maquina = "Windows" #local Albert y Miguel
-#maquina = "MAC"
+maquina = "MAC"
 
 # Path to the data txt file on disk.
-data_path = '/home/alumne/xnap-project-ed_group_03/spa.txt' # to replace by the actual dataset name
+#data_path = '/home/alumne/xnap-project-ed_group_03/spa.txt' # to replace by the actual dataset name
+data_path = 'spa-eng/spa.txt'
 encoder_path='encoder_modelPredTranslation.h5'
 decoder_path='decoder_modelPredTranslation.h5'
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
-usuario = "34606"
+#usuario = "34606"
 #usuario = "apuma"
-#usuario = "carlosletaalfonso"
+usuario = "carlosletaalfonso"
 
 if maquina == "Linux":
     LOG_PATH="/home/alumne/xnap-project-ed_group_03/log" #### remoto
@@ -229,43 +230,89 @@ def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
 #     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
 #     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense
 
+'''
 def modelTranslation(num_encoder_tokens, num_decoder_tokens):
-    # Crear el codificador
+    # codificador
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
     encoder = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed=None), kernel_regularizer=regularizers.l2(0.001))
     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
     encoder_states = [state_h, state_c]
     encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
 
-    # Añadir capa LSTM adicional al codificador
+    # capa lstm extra codificador
     encoder_outputs, state_h2, state_c2 = LSTM(latent_dim, return_sequences=True, return_state=True)(encoder_outputs)
     encoder_states2 = [state_h2, state_c2]
     encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
 
-    # Crear el decodificador
+    # decodificador
     decoder_inputs = Input(shape=(None, num_decoder_tokens))
     decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed=None), kernel_regularizer=regularizers.l2(0.001))
     decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
     decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
 
-    # Añadir capa LSTM adicional al decodificador
+    # capa lstm extra decodificador
     decoder_outputs, _, _ = LSTM(latent_dim, return_sequences=True, return_state=True)(decoder_outputs, initial_state=encoder_states2)
     decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
 
-    # Capa Dense adicional
+    # capa densa extra
     decoder_outputs = Dense(num_decoder_tokens, activation='softmax')(decoder_outputs)
     decoder_dense = Dense(units = num_hidden_units, activation='softmax')(decoder_outputs)  # Capa Dense adicional
     
-    decoder_outputs = Dropout(0.2)(decoder_outputs)
 
+    decoder_outputs = decoder_dense(decoder_outputs)
     #decoder_outputs = decoder_dense(decoder_outputs)
-    # decoder_outputs = decoder_dense(decoder_outputs)
 
-    # decoder_outputs = Dropout(0.2)(decoder_outputs)
+    decoder_outputs = Dropout(0.2)(decoder_outputs)
 
 
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
     return model, decoder_outputs, encoder_inputs, encoder_states, decoder_inputs, decoder_lstm, decoder_dense
+'''
+
+
+
+def modelTranslation(num_encoder_tokens, num_decoder_tokens):
+    # codificador
+    encoder_inputs = Input(shape=(None, num_encoder_tokens))
+    encoder = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed=None), kernel_regularizer=regularizers.l2(0.001))
+    encoder_outputs, state_h, state_c = encoder(encoder_inputs)
+    encoder_states = [state_h, state_c]
+    encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
+
+    # capa lstm extra codificador
+    encoder_outputs, state_h2, state_c2 = LSTM(latent_dim, return_sequences=True, return_state=True)(encoder_outputs)
+    encoder_states2 = [state_h2, state_c2]
+    encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
+
+    # capa lstm extra codificador
+    encoder_outputs, state_h3, state_c3 = LSTM(latent_dim, return_sequences=True, return_state=True)(encoder_outputs)
+    encoder_states3 = [state_h3, state_c3]
+    encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
+
+    # decodificador
+    decoder_inputs = Input(shape=(None, num_decoder_tokens))
+    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed=None), kernel_regularizer=regularizers.l2(0.001))
+    decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
+    #decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
+
+    # capa lstm extra decodificador
+    decoder_outputs, _, _ = LSTM(latent_dim, return_sequences=True, return_state=True)(decoder_outputs, initial_state=encoder_states2)
+    #decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
+
+    # capa lstm extra decodificador
+    decoder_outputs, _, _ = LSTM(latent_dim, return_sequences=True, return_state=True)(decoder_outputs, initial_state=encoder_states3)
+    #decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
+
+    # capa densa extra
+    decoder_dense = Dense(num_decoder_tokens, activation='softmax')
+    decoder_outputs = decoder_dense(decoder_outputs)
+
+    # decoder_outputs = Dropout(0.2)(decoder_outputs)
+
+    model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
+    return model, decoder_outputs, encoder_inputs, encoder_states, decoder_inputs, decoder_lstm, decoder_dense
+
+
 
 
 def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data):
@@ -279,8 +326,8 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
         LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/log" #### local leta
         
     # Run training
-    api_key = "bb956e69049c910a64ff91e3ce887061e9255b8e"
-    wandb.login(key = api_key)
+    #api_key = "ac3e07d6af62eebb8d32a72f8616f602ef68a83d"
+    #wandb.login(key = api_key)
     wandb.init(project="XNAP-PROJECT-ED_GROUP_03")
     wandb_callback = wandb.keras.WandbCallback()
     
@@ -292,7 +339,7 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     #lr_scheduler = LearningRateScheduler(schedule_learning_rate) #exponencial
     
     #Plateau lr
-    lr_scheduler = ReduceLROnPlateau(monitor = 'val_loss', factor = 0.1, patience = 10, verbose = 1, min_lr = 0.0001) #0.5, 10, .0001
+    lr_scheduler = ReduceLROnPlateau(monitor = 'val_accuracy', factor = 0.1, patience = 3, verbose = 1, min_lr = 0.0001) #0.5, 10, .0001
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,

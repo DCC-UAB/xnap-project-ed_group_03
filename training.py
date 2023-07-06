@@ -4,9 +4,10 @@ import tensorflow as tf
 import time
 from tensorflow.keras.callbacks import EarlyStopping
 import random
+from keras.optimizers import Adam
 
 # Crear EarlyStopping
-early_stopping = EarlyStopping(monitor='val_loss', patience=5) #que pare si la val_loss no cambia en 5 épocas
+early_stopping = EarlyStopping(monitor='val_accuracy', patience=10) #que pare si la val_loss no cambia en 5 épocas
 
 #start_time = time.time()
 
@@ -53,7 +54,7 @@ usuario = "carlosletaalfonso"
 
 start_index = 0
 batch_size = 30000
-epochs = 80
+epochs = 400
 steps = 4
 
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
@@ -80,9 +81,9 @@ for epoch in range(epochs): #epochs
         #break
 
 
-    # # Realizar verificación temprana
-    # if early_stopping.should_stop():
-    #     break
+    # Realizar verificación temprana
+    if early_stopping.should_stop():
+         break
 
 # we build the final model for the inference (slightly different) and we save it
 encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense)
