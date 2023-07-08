@@ -4,7 +4,10 @@ import tensorflow as tf
 import time
 from tensorflow.keras.callbacks import EarlyStopping
 import random
-from keras.optimizers import Adam
+from keras.optimizers import Adam, RMSprop
+
+lr = 0.001
+optimizador = RMSprop(learning_rate=lr)
 
 # Crear EarlyStopping
 early_stopping = EarlyStopping(monitor='val_accuracy', patience=10) #que pare si la val_loss no cambia en 5 épocas
@@ -61,7 +64,8 @@ encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, 
 
 # construïm el model amb totes les dades
 model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense=modelTranslation(num_encoder_tokens,num_decoder_tokens)
-model.compile(optimizer='adam', loss='categorical_crossentropy',metrics=["accuracy"])
+#model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=["accuracy"])
+model.compile(optimizer=optimizador, loss='categorical_crossentropy',metrics=["accuracy"])
 
 # DATA LOADER
 generator = data_generator_aleatoritzant(data_path, batch_size)
@@ -73,7 +77,7 @@ for epoch in range(epochs): #epochs
         encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length = data_batch[0][0], data_batch[0][1], data_batch[1], data_batch[2], data_batch[3], data_batch[4], data_batch[5], data_batch[6], data_batch[7], data_batch[8]
         # Train the model with the batch of data
         print("ÈPOCA:", epoch)
-        trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data)
+        lr = trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data, epoch, lr)
 
     # Verificar el tiempo transcurrido
     #elapsed_time = time.time() - start_time
@@ -82,8 +86,8 @@ for epoch in range(epochs): #epochs
 
 
     # Realizar verificación temprana
-    if early_stopping.should_stop():
-         break
+    # if early_stopping.should_stop():
+         #break
 
 # we build the final model for the inference (slightly different) and we save it
 encoder_model,decoder_model,reverse_target_char_index=generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense)

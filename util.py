@@ -22,6 +22,10 @@ latent_dim = 512  # Latent dimensionality of the encoding space. 1024
 num_samples = 130000 # Number of samples to train on. 139705
 num_hidden_units = 110
 
+decay_rate = 0.5 # 0.1
+decay_step =  25 # 2
+
+
 #maquina = "Linux" #remoto 
 #maquina = "Windows" #local Albert y Miguel
 maquina = "MAC"
@@ -50,8 +54,9 @@ def schedule_learning_rate(epoch): #exponencial
     return lr
 
 def scheduler_decay(epoch, lr): # decay
-    decay_rate = 0.95 # 0.1
-    decay_step =  10 # 2
+    decay_rate = 0.1 # 0.1
+    decay_step =  8 # 2
+    print("LEARRRRRNINGGGGG RATEEEEEEEEEEEEEEEEE: ", lr)
     if epoch % decay_step == 0 and epoch:
         return lr * decay_rate
     return max(lr, 0.001) # 0.001 / Aquí es el learning rate mínimo 
@@ -279,12 +284,12 @@ def modelTranslation(num_encoder_tokens, num_decoder_tokens):
     encoder_states = [state_h, state_c]
     encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
 
-    # capa lstm extra codificador
+    # capa lstm extra codificador 2
     encoder_outputs, state_h2, state_c2 = LSTM(latent_dim, return_sequences=True, return_state=True)(encoder_outputs)
     encoder_states2 = [state_h2, state_c2]
     encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
 
-    # capa lstm extra codificador
+    # capa lstm extra codificador 3
     encoder_outputs, state_h3, state_c3 = LSTM(latent_dim, return_sequences=True, return_state=True)(encoder_outputs)
     encoder_states3 = [state_h3, state_c3]
     encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
@@ -295,11 +300,11 @@ def modelTranslation(num_encoder_tokens, num_decoder_tokens):
     decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
     #decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
 
-    # capa lstm extra decodificador
+    # capa lstm extra decodificador 2
     decoder_outputs, _, _ = LSTM(latent_dim, return_sequences=True, return_state=True)(decoder_outputs, initial_state=encoder_states2)
     #decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
 
-    # capa lstm extra decodificador
+    # capa lstm extra decodificador 3
     decoder_outputs, _, _ = LSTM(latent_dim, return_sequences=True, return_state=True)(decoder_outputs, initial_state=encoder_states3)
     #decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
 
@@ -315,7 +320,7 @@ def modelTranslation(num_encoder_tokens, num_decoder_tokens):
 
 
 
-def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data):
+def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_data, epoch, lr):
 # We load tensorboad
 # We train the model
     if maquina == "Linux":
@@ -339,13 +344,23 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     #lr_scheduler = LearningRateScheduler(schedule_learning_rate) #exponencial
     
     #Plateau lr
-    lr_scheduler = ReduceLROnPlateau(monitor = 'val_accuracy', factor = 0.1, patience = 3, verbose = 1, min_lr = 0.0001) #0.5, 10, .0001
+    #lr_scheduler = ReduceLROnPlateau(monitor = 'val_accuracy', factor = 0.1, patience = 5, verbose = 1, min_lr = 0.00001) #0.5, 10, .0001
+
+
+    print("LEARRRRRNINGGGGG RATEEEEEEEEEEEEEEEEE: ", lr)
+    if epoch % decay_step == 0 and epoch:
+        lr *= decay_rate
+    lr = max(lr, 0.00001) # 0.001 / Aquí es el learning rate mínimo 
+
+    model.optimizer.learning_rate =  lr
 
     model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
               batch_size=batch,
               epochs=epochs_batch,
               validation_split=0.05,
-              callbacks = [wandb_callback,lr_scheduler]) 
+              callbacks = [wandb_callback]) #,lr_scheduler]) 
+    
+    return lr
     
 def generateInferenceModel(encoder_inputs, encoder_states,input_token_index,target_token_index,decoder_lstm,decoder_inputs,decoder_dense):
 # Once the model is trained, we connect the encoder/decoder and we create a new model
