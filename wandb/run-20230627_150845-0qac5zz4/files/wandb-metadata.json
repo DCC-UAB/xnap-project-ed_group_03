@@ -1,0 +1,67 @@
+{
+    "os": "Linux-5.15.0-1040-azure-x86_64-with-glibc2.31",
+    "python": "3.10.9",
+    "heartbeatAt": "2023-06-27T15:08:46.278695",
+    "startedAt": "2023-06-27T15:08:45.830196",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/alumne/xnap-project-ed_group_03/training.py",
+    "codePath": "training.py",
+    "git": {
+        "remote": "https://github.com/DCC-UAB/xnap-project-ed_group_03.git",
+        "commit": "9f342990dab5fa6e3decad516a2d50e141368faf"
+    },
+    "email": "1605542@uab.cat",
+    "root": "/home/alumne/xnap-project-ed_group_03",
+    "host": "ML-RefVm-676786",
+    "username": "alumne",
+    "executable": "/home/alumne/anaconda3/bin/python",
+    "cpu_count": 6,
+    "cpu_count_logical": 6,
+    "cpu_freq": {
+        "current": 2596.9870000000005,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2596.987,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.987,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.987,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.987,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.987,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.987,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "total": 145.1909637451172,
+        "used": 141.7160301208496
+    },
+    "memory": {
+        "total": 54.889015197753906
+    }
+}

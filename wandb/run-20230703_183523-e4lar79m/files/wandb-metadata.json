@@ -1,0 +1,34 @@
+{
+    "os": "macOS-13.4.1-arm64-arm-64bit",
+    "python": "3.8.17",
+    "heartbeatAt": "2023-07-03T16:35:23.721717",
+    "startedAt": "2023-07-03T16:35:23.055104",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/training.py",
+    "codePath": "training.py",
+    "git": {
+        "remote": "https://carlosla2802:@github.com/DCC-UAB/xnap-project-ed_group_03.git",
+        "commit": "fa337288fcb011a6c41ad1dd81d009e4bb882657"
+    },
+    "email": "1599255@uab.cat",
+    "root": "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03",
+    "host": "MacBook-Pro-de-Carlos.local",
+    "username": "carlosletaalfonso",
+    "executable": "/Users/carlosletaalfonso/miniforge3/envs/env_proj/bin/python",
+    "cpu_count": 12,
+    "cpu_count_logical": 12,
+    "disk": {
+        "total": 926.3517189025879,
+        "used": 203.2262077331543
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 32.0
+    }
+}
