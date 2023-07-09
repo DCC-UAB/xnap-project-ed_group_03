@@ -31,7 +31,8 @@ Tiene el siguiente aspecto:
 
 En nuestro caso, para mejorar el proyecto inicial y hacer pruebas hemos utilizado el dataset de inglés-español que contiene 139.705 datos.
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/2e6e6a7b-c67b-4ab8-a598-05b355b1f943)
+![Captura de pantalla 2023-07-09 a las 14 40 07](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/3bece356-3fff-4f75-991f-ae4cc4d72257)
+
 
 ## Architecture
 Para este proyecto usamos un modelo Seq2Seq (Sequence-to-Sequence), usado en el procesamiento del lenguaje natural para la traducción automática, generación de texto y otras tareas relacionadas con secuencias. Seq2Seq tiene dos componentes principales, un codificador (encoder) y decodificador (decoder).
@@ -52,8 +53,8 @@ En último lugar, la capa densa, una capa totalmente conectada que coge la infor
 
 ![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/737c2e8c-f1f3-4c2c-bdc8-e48e9397adff)
 
+![Captura de pantalla 2023-07-09 a las 14 39 09](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/e2d9719e-95a0-4db0-a950-c9bfc09b42b9)
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/8af6efdf-f22d-4012-a92f-9253d425d231)
 
 ### GRU
 Tiene el mismo proceso que el modelo LSTM. Se diferencian en la estructura de sus capas; las puertas internas por ejemplo, la cantidad de conexiones; dónde los modelos GRU tienen menos conexiones internas que las capas LSTM o la capacidad de almacenamiento a largo plazo; las capas LSTM tienen mejor capacidad para capturar y retener información a largo plazo en comparación con las GRU. 
@@ -83,8 +84,9 @@ Cómo se puede observar en la gráfica, con dos capas se iba a obtener un peor r
 ## Memory - Data loader
 Partiendo del proyecto usado como punto inicial, se tuvo que resolver un problema de memoria. Con 139.705 muestras en el entrenamiento, las máquinas alcanzaban la capacidad máxima de memoria en la GPU, abortando el proceso y haciendo que no se pudiera entrenar el conjunto de datos completo de una vez. Para solucionar este problema decidimos seguir un enfoque llamado “batch-training”. Este consiste en entrenar nuestro modelo usando lotes (batches) de datos en vez de procesar el conjunto de datos entero de una tirada. En este proceso, los datos de entrenamiento se dividen en subconjuntos más pequeños de datos llamados lotes, y los parámetros del modelo se actualizan en los gradientes calculados en cada lote.
 Los objetivos que teníamos con este enfoque eran:
-  - Ganar eficiencia en memoria: en vez de procesar el dataset entero de una vez solo debíamos   procesar cada lote cada vez, lo que significaba que no ejecutábamos tantos datos.
-  - Generalización: un enfoque basado en lotes ayuda con la generalización del modelo, esto se   debe a que prevenimos que el modelo memorice ejemplos específicos introduciendo variabilidad   en cada época.
+  - **Ganar eficiencia en memoria**: en vez de procesar el dataset entero de una vez solo debíamos   procesar cada lote cada vez, lo que significaba que no ejecutábamos tantos       datos.
+  - **Generalización**: un enfoque basado en lotes ayuda con la generalización del modelo, esto se   debe a que prevenimos que el modelo memorice ejemplos específicos                introduciendo variabilidad   en cada época.
+
 Por tanto, dividimos los datos en lotes de 30.000 muestras. Teníamos opciones menores, pero queríamos mejorar la eficiencia del entrenamiento tomando ventaja de la capacidad de procesado paralelo en la GPU. Por otro lado también queríamos una mayor generalización y estimaciones de gradiente más suaves, debido a que los lotes más grandes son más representativos de todo el dataset en cuanto a variedad de muestras, comparado con lotes más pequeños o ejemplos individuales. Con esta implementación queríamos actualizaciones más estables y solucionar el problema de memoria.
 
 Optamos también por crear un data loader para generar lotes de datos para el entrenamiento e ir agregándolos de poco a poco a memoria. 
@@ -95,16 +97,132 @@ Para poder cuantificar la magnitud de la complejidad del problema, utilizamos va
 Inicialmente, tuvimos que pensar qué estrategia en cuanto a lotes y épocas podíamos seguir para realizar nuestro training. Al principio, erróneamente, decidimos entrenar para cada lote, durante varias épocas. El modelo veía los datos muchas veces de un determinado lote en vez de ir viendo a menudo los otros datos del siguiente; entonces, cuando saltaba al otro lote, el modelo se había sobre ajustado demasiado a los datos del anterior lote. Esto lo íbamos viendo en las gráficas que iban saliendo en el WandB, con unos picos bastante pronunciados de bajada de accuracy e incremento de la loss.
 
 Viendo que no generalizaba bien con esta estrategia de varias épocas por lotes, decidimos probar con una alternativa opuesta, la correcta. En este caso se trataría de leer una vez un lote, y entrenar el modelo con este; de esta forma, ir pasando de lote en lote, y cuando ya se hayan leído todos los lotes, eso representaría una época entera. De esta forma, se entrenaba el modelo adoptando una estrategia BFS (se exploran primero todos los lotes) y aprendía progresivamente de cada lote, sin sobre ajustarse a ninguno, ya que no tiene la ‘oportunidad’ de memorizar tanto los datos de cada lote en cambio, ve una variedad más amplia de datos en una época.
+
 Para visualizar las diferencias que hemos comentado entre nuestro primer intento y el que lo acabó sustituyendo, adjuntamos unas gráficas en las que se ve claramente un patrón en las líneas de 5 épocas por lote, con picos de bajada en las accuracies y picos de subida en las loss, mientras que la alternativa sigue un camino más lineal, más favorable.
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/60251aff-13e1-4511-b84a-095d87c32e9a)
+![Captura de pantalla 2023-07-09 a las 14 46 50](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/04fcfc23-5b32-4eeb-9f55-532951bc30bc)
+
 
 ## Hyperparameters & Overfitting
-**Hyperparameters**
 A partir de nuestras estimaciones iniciales de los mejores hiper parámetros basándonos en lo que le podría convenir a nuestro modelo, con la posterior comprobación de las gráficas de validación y training, de la accuracy y la loss, vamos a enseñar el proceso seguido para encontrar los mejores hiper parámetros.
 
-**Overfitting**
 Al principio, al ajustarse demasiado el modelo a los datos de nuestro conjunto de entrenamiento, barajamos diferentes opciones para de alguna manera, simplificar nuestro modelo y estos son los cambios que hicimos.
+
+#### - Dropout:
+El dropout es una técnica de regularización para reducir el overfitting. Esta consiste en que durante el entrenamiento, de manera aleatoria, se apagan un porcentaje de neuronas en una capa. Esto ayuda a prevenir la dependencia excesiva de ciertas unidades y fuerza a la red a aprender con una fracción aleatoria de unidades en cada paso.
+
+![Captura de pantalla 2023-07-09 a las 14 14 29](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/c899360e-c9f3-46b2-a708-b4f1c460cb07)
+
+Con una sola capa en nuestra red neuronal era bastante evidente que lo mejor era añadir dropout. En este caso el mejor era de 0.2, es decir que se apagaban de manera aleatoria el 20% de las neuronas. 
+
+Después, como hemos mencionado anteriormente, al hacer más complejo nuestro modelo y añadir más capas, tuvimos que quitar el dropout. 
+
+![Captura de pantalla 2023-07-09 a las 14 15 22](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/274045a7-02cc-4323-b403-7a7a733e8be9)
+
+![Captura de pantalla 2023-07-09 a las 14 15 47](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/0b5085db-56cb-42e1-b919-c409cff96ab4)
+
+Cómo podemos observar con la ejecución de arriba de 3 capas, en nuestro modelo comparando ejecución con dropout y sin, al añadir dropout teníamos un exceso de regularización que llevó a las losses no fueran a la par (teniendo una loss de entrenamiento mayor) y que las accuracies tampoco (mayor validation accuracy), lo que quería decir que teníamos un mayor overfitting, ya que estaba penalizando en exceso la parte del entrenamiento del modelo.
+
+Se puede observar que quitando el dropout arreglamos este problema.
+
+#### - Latent dim:
+También probamos en hacer cambios en el tamaño de la dimensión latente. Esta es un conjunto de características ocultas en un modelo de aprendizaje automático, se utiliza para capturar y representar información relevante significativa.
+
+![Captura de pantalla 2023-07-09 a las 14 16 49](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/ee7de096-2d54-429e-adb9-5f0d13c9bcc4)
+
+Hicimos las primeras pruebas con una sola capa teniendo así un modelo más simple. Viendo los gráficos no había una diferencia considerable entre ellas, igualmente, siendo la peor latent dim con tamaño 256, la que nos parecía mejor era de 512 pues converge más lentamente.
+
+![Captura de pantalla 2023-07-09 a las 14 17 17](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/b5c3b404-fe04-453e-9f29-9e4e7d4eccbe)
+
+Luego, cuando añadimos capas al modelo volvimos a probar las latent dim de 512 y 1024 para ver si se mantenían los resultados. Aquí observamos dos cosas, primero que la ejecución con latent dim 1024 era extremadamente lenta y por ello se ve que se corta la gráfica porque estábamos perdiendo mucho tiempo. Y la otra es que converge mucho antes la latent dim de 1024 que la de 512 con múltiples capas en el modelo. Es por ello que escogimos la de 512 finalmente.
+
+#### - Mini-batch:
+El tamaño del mini-batch se refiere al número de muestras de entrenamiento que se utilizan en cada iteración del proceso de entrenamiento. Es un hiperparámetro que puede ajustarse y determina cuántas muestras se procesan simultáneamente antes de actualizar los pesos del modelo. Un tamaño de mini-batch más grande puede acelerar el entrenamiento, mientras que un tamaño más pequeño puede proporcionar estimaciones de gradiente más precisas. Es por ello que quisimos probar varios tamaños para determinar cuál era el más acertado.
+
+![Captura de pantalla 2023-07-09 a las 14 18 17](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/f7ce9be6-19c8-4eb2-844e-8f616fedae78)
+
+Pudimos observar fácilmente que, aunque tuviéramos un entrenamiento más lento, nos convenía utilizar el tamaño de mini-batch original de 256 pues nos permitiría conseguir una menor loss y una mayor accuracy. No valía la pena probar mini batches más pequeños porque sino el entrenamiento sería demasiado lento.
+
+#### - Data loader randomization:
+Para mejorar la generalización del modelo y evitar el overfitting pensamos en aleatorizar el orden de los datos de los lotes en el data loader. La aleatorización en un data loader implica cambiar el orden de las muestras de entrenamiento una vez se ha cargado el lote de datos y antes de entregar ese lote de datos para el entrenamiento.
+
+Esto lo hacemos ya que sino los datos se le presentaban al modelo en un orden específico, el original, haciendo que este se vea influenciado por patrones o tendencias de los datos.
+
+![Captura de pantalla 2023-07-09 a las 14 19 31](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/cc804024-778e-4507-9268-9633a311a7e2)
+
+Como podemos observar, con la aleatorización aplicada, podemos hacer que el modelo aprenda más y vemos que converge más lentamente tanto en la accuracy como la loss de validación, que es lo que buscábamos.
+
+#### - Regularization:
+La regularización consiste en agregar un término de penalización a la función objetivo, proporcional a una fórmula matemática, distinta para cada tipo.
+Nosotros probamos la regularización L1, L2 y Elasticnet (que consiste en una combinación de las dos anteriores).
+
+![Captura de pantalla 2023-07-09 a las 14 20 40](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/f8089ffd-5987-44d0-a331-30e12d2e2161)
+
+Pudimos observar claramente como la mejor era la regularización L2, ayudando más a generalizar el modelo. Mientras que la peor, con gran diferencia, era la L1. En esta gráfica parece una línea recta, aunque no lo era; lo único  es que tenía unas accuracies y losses tan bajas que al compararlas con las otras no se llegan a apreciar.
+
+#### - Batch normalization:
+El batch normalization es una técnica utilizada en redes neuronales para normalizar las salidas de cada capa durante el entrenamiento. Consiste en calcular la media y la desviación estándar de un mini-batch y luego normalizar los datos utilizando esas estadísticas.
+
+Primero hicimos pruebas con nuestro modelo simple de una sola capa. En estas podemos ver que casi no se aprecia diferencia y que no vale la pena implementarlo.
+
+![Captura de pantalla 2023-07-09 a las 14 21 30](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/a6b52457-999c-4789-b623-90413fee6726)
+
+Cuando hicimos más complejo nuestro modelo, añadiendo capas, hicimos más pruebas. En la imagen de arriba en lila es batch normalization en todas las capas y en gris en la primera capa solamente. Llegamos a la conclusión de que lo mejor era como se ve en el gráfico, añadir el batch normalization a todas las capas y solo en el encoder.
+
+![Captura de pantalla 2023-07-09 a las 14 21 53](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/c6bef2df-e50a-42cf-97ab-384489d84dd4)
+
+#### - Optimizer:
+El Optimizador determina cómo se actualizan los pesos en función de los gradientes calculados en cada iteración. El objetivo es encontrar los valores óptimos de los pesos que permitan al modelo converger hacia una solución que minimice la pérdida en los datos de entrenamiento.
+
+![Captura de pantalla 2023-07-09 a las 14 22 40](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/8ce5e9c0-3a28-4963-8eb8-4b7ffb48ea95)
+
+En nuestro caso, el que nos ha dado mejor resultado en las ejecuciones ha sido el RMSProp, especialmente en las ejecuciones más largas de varias capas, donde conseguía reducir mejor que el Adam los picos de bajada de accuracy y subida de loss. Creemos que puede deberse a ciertas características de este optimizador como la estabilidad de los gradientes, calculando los promedios móviles de los cuadrados de los gradientes anteriores, reduciendo la variabilidad y magnitud de los gradientes en comparación a Adam y así evitar más oscilaciones bruscas.
+
+#### - Learning rate:
+El learning rate es un hiperparámetro que controla la cantidad de ajuste que se realiza en los pesos de las neuronas durante el proceso de entrenamiento. Es decir, determina qué tan rápido o lento se actualizan los pesos en función del error calculado en la retropropagación.
+En nuestro proyecto hemos acabado utilizando un learning rate scheduler con la técnica de decay. Esto es, cada X épocas, reducimos el learning rate multiplicándose por un factor. Para realizar esto primero hicimos una ejecución larga para ver donde convergía nuestro modelo fijándonos en el accuracy, desde ahí, sacamos cada cuantas épocas debía reducirse el learning rate para evitar que converja el modelo. 
+
+![Captura de pantalla 2023-07-09 a las 14 23 32](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/4a0ab70e-addb-4d99-b455-d8e0d5dd8766)
+
+En la gráfica podemos observar como en la época 80 empezaba a convergir el modelo y de golpe incrementa la accuracy debido a que reducimos el learning rate. Pusimos que hubiera un decay de este cada 80 steps (20 épocas), consiguiendo así una mayor accuracy y menor loss que en las demás ejecuciones.
+
+## Results
+
+### Final execution
+Finalmente, hicimos una ejecución larga, de varias horas con 135 epochs, con todos los parámetros que hemos ido comentando. Como se puede ver, hemos conseguido reducir bastante el overfitting que nos íbamos encontrando constantemente a la hora de realizar las ejecuciones. Hemos llegado a una loss bastante baja tanto en training como en validation (0.037 y 0.038), y también hemos conseguido subir la accuracy tanto en training como validation (0.37 y 0.37). Otro punto importante que comentamos en una reunión el profesor, es el problema extraño que teníamos con las grandes diferencias de accuracy y loss entre las gráficas de training y validation, especialmente con la loss; pero ahora lo conseguimos solucionar mirando teoría y en algunos artículos de páginas como towards data science / medium, donde quedó claro que el drop out tan alto como lo teníamos penalizaba demasiado a nuestro entrenamiento junto a un incremento de capas que resultó ser positivo. A pesar de esto, pensamos que con ciertos ajustes y ejecuciones mucho más largas, podríamos llegar a mejorarlo todavía más.
+
+![Captura de pantalla 2023-07-09 a las 14 27 49](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/c6270bcd-8b3b-4cfa-8f26-bbfc4bdce42b)
+
+#### Prediction
+Los resultados de las traducciones no son especialmente muy buenos, ya que dependiendo de la complejidad puede fallar en bastantes cosas, pero vemos que ya hace algunas traducciones con bastante sentido.
+
+![Captura de pantalla 2023-07-09 a las 14 28 57](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/f6718e80-bda7-42bf-863b-60cc7c418eda)
+![Captura de pantalla 2023-07-09 a las 14 29 49](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/ddeff323-0d9f-45e8-84d5-20e5a52e620c)
+
+### Language comparison
+Finalmente quisimos también probar nuestro modelo con distintos idiomas. Empezamos usando el dataset de catalán, pero al tener demasiadas pocas frases, decidimos cambiar al dataset en castellano. Con este conjunto de datos sí pudimos entrenar de forma exitosa nuestro modelo, ya que poseía más de 100.000 ejemplares.
+
+Para añadir más valor al proyecto, escogimos otro idioma, esta vez uno que no se pareciese en nada a estos dos para ver qué impacto tiene la arquitectura Seq2Seq y si realmente no hace falta que se parezcan los idiomas. Escogimos, entonces, el finlandés ya que tenía suficientes datos (unos 70.000) para entrenar el modelo. Decidimos hacer ejecuciones con las mismas epochs en ambas, sin utilizar la ejecución grande de la del castellano, para así poder comparar bien el rendimiento con el mismo tamaño. 
+
+Como se puede observar en las gráficas a continuación, ambos idiomas (español y finlandés) mostraron resultados parecidos:
+
+![Captura de pantalla 2023-07-09 a las 14 31 06](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/a32fcb86-d445-4988-a357-2fa8f9874bf5)
+
+Aunque uno tenga mejores resultados que el otro, vemos que las tendencias de ambos son prácticamente iguales, la convergencia es la misma. Es un buen ejemplo para observar que la arquitectura usada (seq2seq) aprende a capturar las relaciones y patrones entre las palabras y las estructuras de las oraciones en ambos idiomas, y así puede generalizar para traducir entre idiomas diferentes. Es decir, el modelo es capaz de aprender representaciones de alto nivel y realizar una traducción basada en la información contextual aprendida durante el entrenamiento. Además, cabe destacar que, en el proceso de entrenamiento, los parámetros que recibe el modelo están tokenizados, por tanto, al estar el texto codificado, el modelo no entiende de palabras, simplemente trata con números (indistintamente del idioma).
+
+#### Prediction
+También hicimos alguna traducción al finlandés. No podíamos saber si tenían cierto sentido las traducciones, porque no sabemos nada del idioma, pero fuimos traduciendo las frases a otro traductor (el de google) y a pesar de no ser excelentes, tienen cierto sentido ambas, como ocurre con las de castellano.
+
+![Captura de pantalla 2023-07-09 a las 14 32 51](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/e179fb45-1407-41af-948b-fd6a822f08f4)
+![Captura de pantalla 2023-07-09 a las 14 33 07](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/2bb5d23e-4d9f-4591-b3bd-663d7c9290a5)
+
+## Conclusions
+Como conclusiones del proyecto, creemos haber realizado un bastante buen trabajo, mejorando significativamente respecto a cuando lo empezamos inicialmente, pese a no haber obtenido excelentes accuracies y predicciones. Consideramos haber cumplido los objetivos que nos propusimos al inicio del proyecto y hemos gestionado los problemas que nos han ido surgiendo a lo largo del proyecto de la mejor forma que hemos podido. Creemos que la memoria ha sido un limitante a la hora de hacer el proyecto, muchas ejecuciones largas se interrumpían o se “morían” a mitad por no tener suficiente memoria, especialmente durante el ecuador del proyecto.
+
+En la documentación del proyecto inicial, se aclara que entrenar el modelo por completo tarda semanas y que se empiezan a obtener buenos resultados cuando se entrena durante decenas de horas; es por ello, que cómo posible mejora nos hubiese gustado poder ejecutar durante mucho más tiempo el modelo.
+
+Finalmente, pese a las dificultades que hemos tenido, creemos que la experiencia de usar máquinas remotas de Azure para tener mayor capacidad de ejecución ha sido una experiencia agradable. Los profesores han presentado herramientas muy útiles que nos han facilitado faena, cómo la interfaz de Weights & Biases (que auto gestiona las gráficas) o el uso de Github (que ha permitido trabajar en grupo más cómodamente) y las cuales planeamos usar en un futuro para próximos proyectos.
+
 
 
 ## Contributors
