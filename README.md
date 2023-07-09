@@ -71,7 +71,7 @@ En las gráficas comparativas se puede observar que de primeras, las células GR
 Teniendo esta observación en cuenta, y a sabiendas que las capas LSTM tienen un mayor  número de conexiones internas y una mayor capacidad de almacenamiento a largo plazo, las escogimos en vez de las GRU ya que pensamos que serían más óptimas para nuestro modelo a largo plazo.
 
 ### Model's complexity 
-Nos encontramos con un starting point muy simple, con un modelo sin muchos hiper parámetros y con una sola capa de codificación y decodificación. Empezamos haciendo las pruebas de hiper parámetros con una única capa de encoder y decoder. Fuimos aumentando la complejidad con hiper parámetros que se explicarán más adelante y nos estancamos en un punto donde conseguimos arreglar gran parte del overfitting y empezamos a ver un overfitting donde se separaban las losses, teniendo por encima la loss de entrenamiento que de validación.
+Nos encontramos con un starting point muy simple, con un modelo sin muchos hiper parámetros y con una sola capa de codificación y decodificación. Empezamos haciendo las pruebas de hiper parámetros con una única capa de encoder y decoder. Fuimos aumentando la complejidad con hiper parámetros que se explicarán más adelante y nos estancamos en un punto donde conseguimos arreglar gran parte del overfitting donde teníamos loss de entrenamiento mayor que la de validación y el mismo caso con las accuracies pero inverso (mayor accuracy de validación con diferencia) pero el modelo nos convergía muy pronto, atascándonos en una accuracy de aproximadamente el 20%.
 
 Para solucionar esto decidimos aumentar la complejidad de nuestro modelo añadiendo capas. Hicimos pruebas con una, dos y tres capas para encoder y decoder. Pudimos observar como se ve en la gráficas que parecía que para nuestro proyecto lo mejor serían 3 capas de encoder y decoder. Cabe destacar que los hiper parámetros que probamos con una única capa (se verán a continuación) funcionaban también los mejores para múltiples capas, lo único que hubo que cambiar fue quitar el dropout ya que como teníamos regularización de tipo L2 ya teníamos un exceso de regularización.
 
@@ -79,7 +79,7 @@ Para solucionar esto decidimos aumentar la complejidad de nuestro modelo añadie
 
 ![Captura de pantalla 2023-07-09 a las 14 57 15](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/393c678b-1f7b-462d-9f42-084e5ca355e9)
 
-Cómo se puede observar en la gráfica, con dos capas se iba a obtener un peor resultado, pues empezaba a converger sobre el 24% de accuracy, menos que las demás. Por otro lado, aunque con 3 capas el modelo converge antes, con 4 capas acaba convergiendo en el mismo punto, dando los mismos resultados. Con esto en mente y viendo que con 4 capas, el ritmo de ejecución era considerablemente más lento (cuantas más capas, más lenta la ejecución), decidimos que la mejor opción era usar 3 capas LSTM para el encoder y el decoder respectivamente.
+Cómo se puede observar en la gráfica, con dos capas se iba a obtener un peor resultado, pues empezaba a converger sobre el 24% de accuracy, menos que las demás, pero más rápido que nuestro modelo simple. Por otro lado, aunque con 3 capas el modelo converge antes, con 4 capas acaba convergiendo en el mismo punto, dando los mismos resultados. Con esto en mente y viendo que con 4 capas, el ritmo de ejecución era considerablemente más lento (cuantas más capas, más lenta la ejecución), decidimos que la mejor opción era usar 3 capas LSTM para el encoder y el decoder respectivamente.
 
 ## Memory - Data loader
 Partiendo del proyecto usado como punto inicial, se tuvo que resolver un problema de memoria. Con 139.705 muestras en el entrenamiento, las máquinas alcanzaban la capacidad máxima de memoria en la GPU, abortando el proceso y haciendo que no se pudiera entrenar el conjunto de datos completo de una vez. Para solucionar este problema decidimos seguir un enfoque llamado “batch-training”. Este consiste en entrenar nuestro modelo usando lotes (batches) de datos en vez de procesar el conjunto de datos entero de una tirada. En este proceso, los datos de entrenamiento se dividen en subconjuntos más pequeños de datos llamados lotes, y los parámetros del modelo se actualizan en los gradientes calculados en cada lote.
@@ -113,15 +113,17 @@ El dropout es una técnica de regularización para reducir el overfitting. Esta 
 
 ![Captura de pantalla 2023-07-09 a las 14 14 29](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/c899360e-c9f3-46b2-a708-b4f1c460cb07)
 
-Con una sola capa en nuestra red neuronal era bastante evidente que lo mejor era añadir dropout. En este caso el mejor era de 0.2, es decir que se apagaban de manera aleatoria el 20% de las neuronas. 
+Con una sola capa en nuestra red neuronal vimos que lo mejor era añadir dropout, debido al mal rendimiento que tenía sin aplicarlo. En este caso el mejor era de 0.2, es decir que se apagaban de manera aleatoria el 20% de las neuronas.
 
-Después, como hemos mencionado anteriormente, al hacer más complejo nuestro modelo y añadir más capas, tuvimos que quitar el dropout. 
+Pero a pesar de esto, descubrimos mirando en teoria y articulos de towards data science / medium que el dropout nos estaba causando uno de los problemas extraños que comentamos en la reunión con el profesor, donde teníamos una training loss demasiado alta en comparación de la validation. Pudimos comprender que un dropout como el que teniamos penalizaba demasiado al training, que es donde se aplica esta 'penalización', y por ello nos surgía esa gran diferencia. 
+
+Entonces añadiendo más capas prescindimos del dropout, arreglando el exceso de regularización, por lo que ahora ya no teníamos esos resultados pésimos que teníamos con una capa sin aplicar el dropout.
 
 ![Captura de pantalla 2023-07-09 a las 14 15 22](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/274045a7-02cc-4323-b403-7a7a733e8be9)
 
 ![Captura de pantalla 2023-07-09 a las 14 15 47](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/0b5085db-56cb-42e1-b919-c409cff96ab4)
 
-Cómo podemos observar con la ejecución de arriba de 3 capas, en nuestro modelo comparando ejecución con dropout y sin, al añadir dropout teníamos un exceso de regularización que llevó a las losses no fueran a la par (teniendo una loss de entrenamiento mayor) y que las accuracies tampoco (mayor validation accuracy), lo que quería decir que teníamos un mayor overfitting, ya que estaba penalizando en exceso la parte del entrenamiento del modelo.
+Cómo podemos observar con la ejecución de arriba de 3 capas, en nuestro modelo comparando ejecución con dropout y sin, al añadir dropout teníamos que las losses no iban a la par (teniendo una loss de training mayor) y que las accuracies tampoco (mayor validation accuracy).
 
 Se puede observar que quitando el dropout arreglamos este problema.
 
@@ -189,7 +191,7 @@ En la gráfica podemos observar como en la época 80 empezaba a convergir el mod
 ## Results
 
 ### Final execution
-Finalmente, hicimos una ejecución larga, de varias horas con 135 epochs, con todos los parámetros que hemos ido comentando. Como se puede ver, hemos conseguido reducir bastante el overfitting que nos íbamos encontrando constantemente a la hora de realizar las ejecuciones. Hemos llegado a una loss bastante baja tanto en training como en validation (0.037 y 0.038), y también hemos conseguido subir la accuracy tanto en training como validation (0.37 y 0.37). Otro punto importante que comentamos en una reunión el profesor, es el problema extraño que teníamos con las grandes diferencias de accuracy y loss entre las gráficas de training y validation, especialmente con una loss de training mucho más alta que la de validation; pero ahora lo conseguimos solucionar mirando teoría y en algunos artículos de páginas como towards data science / medium, donde quedó claro que el dropout tan alto como lo teníamos penalizaba demasiado a nuestro entrenamiento, ya que es donde se aplica esta 'penalización', junto también a un incremento de capas que resultó ser positivo. A pesar de esto, pensamos que con ciertos ajustes y ejecuciones mucho más largas, podríamos llegar a mejorarlo todavía más.
+Finalmente, hicimos una ejecución larga, de varias horas con 135 epochs, con todos los parámetros que hemos ido comentando. Como se puede ver, hemos conseguido reducir bastante el overfitting que nos íbamos encontrando constantemente a la hora de realizar las ejecuciones. Hemos llegado a una loss bastante baja tanto en training como en validation (0.037 y 0.038), y también hemos conseguido subir la accuracy tanto en training como validation (0.37 y 0.37). A pesar de esto, pensamos que con ciertos ajustes y ejecuciones mucho más largas, podríamos llegar a mejorarlo todavía más.
 
 ![Captura de pantalla 2023-07-09 a las 14 27 49](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/c6270bcd-8b3b-4cfa-8f26-bbfc4bdce42b)
 
