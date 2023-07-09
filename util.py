@@ -9,7 +9,6 @@ import pickle
 import os
 import wandb
 from keras.callbacks import LearningRateScheduler
-# from nltk.translate.bleu_score import sentence_bleu
 import tensorflow as tf
 from keras.callbacks import ReduceLROnPlateau
 from keras.initializers import glorot_normal
@@ -22,8 +21,8 @@ latent_dim = 512  # Latent dimensionality of the encoding space. 1024
 num_samples = 130000 # Number of samples to train on. 139705
 num_hidden_units = 110
 
-decay_rate = 0.5 # 0.1
-decay_step =  25 # 2
+decay_rate = 0.5 # reduction factor of learning rate
+decay_step =  25 # number of epochs for learning rate decay
 
 
 #maquina = "Linux" #remoto 
@@ -36,7 +35,7 @@ data_path = 'spa-eng/spa.txt'
 encoder_path='encoder_modelPredTranslation.h5'
 decoder_path='decoder_modelPredTranslation.h5'
 
-### DESCOMENTAR TU USUARIO EN LOCAL ###
+### Sustituir por su usuario ###
 #usuario = "34606"
 #usuario = "apuma"
 usuario = "carlosletaalfonso"
@@ -49,18 +48,22 @@ else:
     LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/log" #### local leta
 
 
-def schedule_learning_rate(epoch): #exponencial
-    lr = 0.01 * 0.001 ** epoch
-    return lr
 
-def scheduler_decay(epoch, lr): # decay
-    decay_rate = 0.1 # 0.1
-    decay_step =  8 # 2
-    print("LEARRRRRNINGGGGG RATEEEEEEEEEEEEEEEEE: ", lr)
-    if epoch % decay_step == 0 and epoch:
-        return lr * decay_rate
-    return max(lr, 0.001) # 0.001 / Aquí es el learning rate mínimo 
-    # return lr
+# IF USING CALLBACKS, USE THIS FUNCTIONS
+# def schedule_learning_rate(epoch): #exponencial
+#     lr = 0.01 * 0.001 ** epoch
+#     return lr
+
+# def scheduler_decay(epoch, lr): # decay
+#     decay_rate = 0.1 
+#     decay_step =  8
+#     print("LEARNING RATE: ", lr)
+#     if epoch % decay_step == 0 and epoch:
+#         return lr * decay_rate
+#     return max(lr, 0.001)  # Aquí es el learning rate mínimo 
+    
+
+
 
 def prepareData(data_path, start_index=None, batch_size=None):
     if batch_size:
@@ -210,72 +213,6 @@ def modelTranslation2(num_encoder_tokens,num_decoder_tokens):
     
     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_gru,decoder_dense
 	
-# def modelTranslation(num_encoder_tokens,num_decoder_tokens):
-# # We create the model 1 encoder(lstm) + 1 decode (LSTM) + 1 Dense layer + softmax
-#     encoder_inputs = Input(shape=(None, num_encoder_tokens))
-#     encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer=regularizers.l2(0.001))
-#     #encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer=regularizers.l1(0.001))
-#     #encoder = LSTM(latent_dim, return_state=True, kernel_initializer=glorot_normal(seed = None) , kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
-#     encoder_outputs, state_h, state_c = encoder(encoder_inputs)
-#     encoder_states = [state_h, state_c]
-
-#     #encoder_outputs = BatchNormalization()(encoder_outputs)
-#     #encoder_outputs = Dropout(0.2)(encoder_outputs)
-
-#     decoder_inputs = Input(shape=(None, num_decoder_tokens))
-#     decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l2(0.001))
-#     #decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None),  kernel_regularizer=regularizers.l1(0.001))
-#     #decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed = None), kernel_regularizer= L1L2(l1 = 0.01, l2 = 0.01))
-#     decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
-#     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
-#     decoder_outputs = decoder_dense(decoder_outputs)
-
-#     #decoder_outputs = Dropout(0.2)(decoder_outputs)
-
-#     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-#     return model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense
-
-'''
-def modelTranslation(num_encoder_tokens, num_decoder_tokens):
-    # codificador
-    encoder_inputs = Input(shape=(None, num_encoder_tokens))
-    encoder = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed=None), kernel_regularizer=regularizers.l2(0.001))
-    encoder_outputs, state_h, state_c = encoder(encoder_inputs)
-    encoder_states = [state_h, state_c]
-    encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
-
-    # capa lstm extra codificador
-    encoder_outputs, state_h2, state_c2 = LSTM(latent_dim, return_sequences=True, return_state=True)(encoder_outputs)
-    encoder_states2 = [state_h2, state_c2]
-    encoder_outputs = BatchNormalization()(encoder_outputs)  # Añadir Batch Normalization
-
-    # decodificador
-    decoder_inputs = Input(shape=(None, num_decoder_tokens))
-    decoder_lstm = LSTM(latent_dim, return_sequences=True, return_state=True, kernel_initializer=glorot_normal(seed=None), kernel_regularizer=regularizers.l2(0.001))
-    decoder_outputs, _, _ = decoder_lstm(decoder_inputs, initial_state=encoder_states)
-    decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
-
-    # capa lstm extra decodificador
-    decoder_outputs, _, _ = LSTM(latent_dim, return_sequences=True, return_state=True)(decoder_outputs, initial_state=encoder_states2)
-    decoder_outputs = BatchNormalization()(decoder_outputs)  # Añadir Batch Normalization
-
-    # capa densa extra
-    decoder_outputs = Dense(num_decoder_tokens, activation='softmax')(decoder_outputs)
-    decoder_dense = Dense(units = num_hidden_units, activation='softmax')(decoder_outputs)  # Capa Dense adicional
-    
-
-    decoder_outputs = decoder_dense(decoder_outputs)
-    #decoder_outputs = decoder_dense(decoder_outputs)
-
-    decoder_outputs = Dropout(0.2)(decoder_outputs)
-
-
-    model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-    return model, decoder_outputs, encoder_inputs, encoder_states, decoder_inputs, decoder_lstm, decoder_dense
-'''
-
-
-
 def modelTranslation(num_encoder_tokens, num_decoder_tokens):
     # codificador
     encoder_inputs = Input(shape=(None, num_encoder_tokens))
@@ -312,6 +249,7 @@ def modelTranslation(num_encoder_tokens, num_decoder_tokens):
     decoder_dense = Dense(num_decoder_tokens, activation='softmax')
     decoder_outputs = decoder_dense(decoder_outputs)
 
+
     # decoder_outputs = Dropout(0.2)(decoder_outputs)
 
     model = Model([encoder_inputs, decoder_inputs], decoder_outputs)
@@ -330,8 +268,8 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     else:
         LOG_PATH = "/Users/carlosletaalfonso/github-classroom/DCC-UAB/xnap-project-ed_group_03/output/log" #### local leta
         
-    # Run training
-    #api_key = "ac3e07d6af62eebb8d32a72f8616f602ef68a83d"
+    # LOG IN TO WANDB WITH YOUR API KEY
+    #api_key = "XXXXXXXXXXXXXXXXXX" # your api key
     #wandb.login(key = api_key)
     wandb.init(project="XNAP-PROJECT-ED_GROUP_03")
     wandb_callback = wandb.keras.WandbCallback()
@@ -340,17 +278,18 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
     wandb.config.epochs = epochs_batch
     wandb.config.validation_split = 0.05
 
-    #lr_scheduler = LearningRateScheduler(scheduler_decay) #decay 
+    # IF USING CALLBAKCS, USE THIS CODE
     #lr_scheduler = LearningRateScheduler(schedule_learning_rate) #exponencial
-    
+    #lr_scheduler = LearningRateScheduler(scheduler_decay) #decay
     #Plateau lr
     #lr_scheduler = ReduceLROnPlateau(monitor = 'val_accuracy', factor = 0.1, patience = 5, verbose = 1, min_lr = 0.00001) #0.5, 10, .0001
 
 
-    print("LEARRRRRNINGGGGG RATEEEEEEEEEEEEEEEEE: ", lr)
+    # IN CODE IMPLEMENTED LEARNING RATE SCHEDULER (WITH FACTOR DECAY)
+    print("LEARNING RATE: ", lr)
     if epoch % decay_step == 0 and epoch:
         lr *= decay_rate
-    lr = max(lr, 0.00001) # 0.001 / Aquí es el learning rate mínimo 
+    lr = max(lr, 0.00001) #/ Aquí es el learning rate mínimo 
 
     model.optimizer.learning_rate =  lr
 
@@ -358,7 +297,7 @@ def trainSeq2Seq(model,encoder_input_data, decoder_input_data,decoder_target_dat
               batch_size=batch,
               epochs=epochs_batch,
               validation_split=0.05,
-              callbacks = [wandb_callback]) #,lr_scheduler]) 
+              callbacks = [wandb_callback]) #,lr_scheduler]) # IF USING CALLBACKS, UNCOMMENT THIS
     
     return lr
     
