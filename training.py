@@ -6,14 +6,20 @@ from tensorflow.keras.callbacks import EarlyStopping
 import random
 from keras.optimizers import Adam, RMSprop
 
+
+# CHOOSE STARTING LEARNING RATE AND OPTIMIZER
 lr = 0.001
 optimizador = RMSprop(learning_rate=lr)
+# optimizador = Adam(learning_rate=lr)
 
-# Crear EarlyStopping
-early_stopping = EarlyStopping(monitor='val_accuracy', patience=10) #que pare si la val_loss no cambia en 5 épocas
+# IF WILLING TO STOP WITH "EARLY STOPPING" METHOD, UNCOMMENT THIS
+# early_stopping = EarlyStopping(monitor='val_accuracy', patience=10) #que pare si la val_loss no cambia en 5 épocas
 
-#start_time = time.time()
 
+# IF WILLING TO STOP BY TIME, UNCOMMENT THIS
+# start_time = time.time()
+
+# RANDOMIZED DATALOADER
 def data_generator_aleatoritzant(data_path, batch_size):
     start_index = 0
     while True:
@@ -33,7 +39,7 @@ def data_generator_aleatoritzant(data_path, batch_size):
         # Update the start index for the next batch
         start_index += batch_size
 
-
+# STANDARD DATALOADER
 def data_generator_basic(data_path, batch_size):
     start_index = 0
     while True:
@@ -46,25 +52,25 @@ def data_generator_basic(data_path, batch_size):
         start_index += batch_size
 
 
-#maquina = "Linux" #remoto 
+# maquina = "Linux" #remoto 
 # maquina = "Windows" #local Albert y Miguel
 maquina = "MAC"
 
 ### DESCOMENTAR TU USUARIO EN LOCAL ###
-#usuario = "34606"
-#usuario = "apuma"
+# usuario = "34606"
+# usuario = "apuma"
 usuario = "carlosletaalfonso"
 
 start_index = 0
 batch_size = 30000
-epochs = 400
+epochs = 130
 steps = 4
 
 encoder_input_data, decoder_input_data, decoder_target_data, input_token_index, target_token_index,input_texts,target_texts,num_encoder_tokens,num_decoder_tokens,max_encoder_seq_length=prepareData(data_path)
 
 # construïm el model amb totes les dades
 model,decoder_outputs,encoder_inputs,encoder_states,decoder_inputs,decoder_lstm,decoder_dense=modelTranslation(num_encoder_tokens,num_decoder_tokens)
-#model.compile(optimizer='rmsprop', loss='categorical_crossentropy',metrics=["accuracy"])
+
 model.compile(optimizer=optimizador, loss='categorical_crossentropy',metrics=["accuracy"])
 
 # DATA LOADER
@@ -79,12 +85,14 @@ for epoch in range(epochs): #epochs
         print("ÈPOCA:", epoch)
         lr = trainSeq2Seq(model, encoder_input_data, decoder_input_data, decoder_target_data, epoch, lr)
 
+
+    # IF WILLING TO USE TIME FOR STOPPING THE TRAINING PROCESS, UNCOMMENT THIS SECTION
     # Verificar el tiempo transcurrido
-    #elapsed_time = time.time() - start_time
-    #if elapsed_time >= 1200: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
+    # elapsed_time = time.time() - start_time
+    # if elapsed_time >= 1200: #media hora,, 3600 <- una hora:  # Detener después de 1 hora
         #break
 
-
+    # IF WILLING TO USE EARLY STOPPING METHOD FOR STOPPING THE TRAINING PROCESS, UNCOMMENT THIS SECTION
     # Realizar verificación temprana
     # if early_stopping.should_stop():
          #break
