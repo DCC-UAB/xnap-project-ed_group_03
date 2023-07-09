@@ -27,7 +27,7 @@ Está estructurado en forma de parejas de oraciones, por cada par una oración e
 Tiene el siguiente aspecto: 
 **Inglés + tabulación + el otro idioma + tabulación + atribución**
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/5220fba8-c8bf-4229-a3f4-ed069ba0a2d4)
+![Captura de pantalla 2023-07-09 a las 14 51 44](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/fc9b3ca9-94f6-4f77-82b5-71367496dfae)
 
 En nuestro caso, para mejorar el proyecto inicial y hacer pruebas hemos utilizado el dataset de inglés-español que contiene 139.705 datos.
 
@@ -51,7 +51,7 @@ Luego, en el decoder tiene como entrada la secuencia de salida, en este caso de 
 
 En último lugar, la capa densa, una capa totalmente conectada que coge la información de la capa recurrente y la transforma para  producir una salida final de la red, en este caso pasa de 512 (latent_dim) a 110 (tamaño del lenguaje al que vamos a traducir).
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/737c2e8c-f1f3-4c2c-bdc8-e48e9397adff)
+![Captura de pantalla 2023-07-09 a las 14 53 16](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/d8a2cbf9-084d-4007-a9f1-bc939f075be8)
 
 ![Captura de pantalla 2023-07-09 a las 14 39 09](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/e2d9719e-95a0-4db0-a950-c9bfc09b42b9)
 
@@ -59,12 +59,12 @@ En último lugar, la capa densa, una capa totalmente conectada que coge la infor
 ### GRU
 Tiene el mismo proceso que el modelo LSTM. Se diferencian en la estructura de sus capas; las puertas internas por ejemplo, la cantidad de conexiones; dónde los modelos GRU tienen menos conexiones internas que las capas LSTM o la capacidad de almacenamiento a largo plazo; las capas LSTM tienen mejor capacidad para capturar y retener información a largo plazo en comparación con las GRU. 
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/971c573a-ad8a-4d80-9498-62617112cb36)
+![Captura de pantalla 2023-07-09 a las 14 54 11](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/a0750a80-7f74-45ba-a8dd-a8bab79b9cf8)
 
 ### Choosing the best cell type: GRU vs LSTM
 Antes de nada debíamos escoger los tipos de capas que íbamos a usar. Para ello hicimos una ejecución con los mismos parámetros y misma duración en términos de épocas con células GRU y con LSTM para compararlas. 
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/edb1b419-396f-4d69-8ed4-7c02261fbbf2)
+![Captura de pantalla 2023-07-09 a las 14 55 13](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/74969fff-6dd1-4a8f-87b6-5a45b8014940)
 
 En las gráficas comparativas se puede observar que de primeras, las células GRU tienen un mayor accuracy y menor loss. No obstante podemos observar que parecen converger antes mientras que las células LSTM tenían margen para seguir aprendiendo.
 
@@ -75,9 +75,9 @@ Nos encontramos con un starting point muy simple, con un modelo sin muchos hiper
 
 Para solucionar esto decidimos aumentar la complejidad de nuestro modelo añadiendo capas. Hicimos pruebas con una, dos y tres capas para encoder y decoder. Pudimos observar como se ve en la gráficas que parecía que para nuestro proyecto lo mejor serían 3 capas de encoder y decoder. Cabe destacar que los hiper parámetros que probamos con una única capa (se verán a continuación) funcionaban también los mejores para múltiples capas, lo único que hubo que cambiar fue quitar el dropout ya que como teníamos regularización de tipo L2 ya teníamos un exceso de regularización.
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/44fac945-a87b-400b-a750-06020c1a0854)
+![Captura de pantalla 2023-07-09 a las 14 57 00](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/9b369930-bccf-4ff2-b3e0-4b9e07295b10)
 
-![image](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/102174790/529cf55a-9646-4842-afd2-64c30e70b7a8)
+![Captura de pantalla 2023-07-09 a las 14 57 15](https://github.com/DCC-UAB/xnap-project-ed_group_03/assets/133142194/393c678b-1f7b-462d-9f42-084e5ca355e9)
 
 Cómo se puede observar en la gráfica, con dos capas se iba a obtener un peor resultado, pues empezaba a converger sobre el 24% de accuracy, menos que las demás. Por otro lado, aunque con 3 capas el modelo converge antes, con 4 capas acaba convergiendo en el mismo punto, dando los mismos resultados. Con esto en mente y viendo que con 4 capas, el ritmo de ejecución era considerablemente más lento (cuantas más capas, más lenta la ejecución), decidimos que la mejor opción era usar 3 capas LSTM para el encoder y el decoder respectivamente.
 
