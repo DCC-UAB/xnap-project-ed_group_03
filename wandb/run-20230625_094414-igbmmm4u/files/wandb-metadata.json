@@ -1,0 +1,75 @@
+{
+    "os": "Linux-5.15.0-1039-azure-x86_64-with-glibc2.31",
+    "python": "3.10.9",
+    "heartbeatAt": "2023-06-25T09:44:14.939116",
+    "startedAt": "2023-06-25T09:44:14.231957",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/home/alumne/xnap-project-ed_group_03-1/training.py",
+    "codePath": "training.py",
+    "git": {
+        "remote": "https://github.com/DCC-UAB/xnap-project-ed_group_03.git",
+        "commit": "62584aa74c00368a9f0f7992638e6bf7fb7a7174"
+    },
+    "email": "1605542@uab.cat",
+    "root": "/home/alumne/xnap-project-ed_group_03-1",
+    "host": "ML-RefVm-676786",
+    "username": "alumne",
+    "executable": "/home/alumne/anaconda3/bin/python",
+    "cpu_count": 6,
+    "cpu_count_logical": 6,
+    "cpu_freq": {
+        "current": 2596.989,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2596.989,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.989,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.989,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.989,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.989,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2596.989,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "total": 145.1909637451172,
+        "used": 141.23257446289062
+    },
+    "gpu": "Tesla M60",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "Tesla M60",
+            "memory_total": 8589934592
+        }
+    ],
+    "memory": {
+        "total": 54.90073013305664
+    }
+}
