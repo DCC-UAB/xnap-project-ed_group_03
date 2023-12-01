@@ -230,6 +230,7 @@ Finalmente, pese a las dificultades que hemos tenido, creemos que la experiencia
 ## Contributors
 Miguel J Garrido - 1605542@uab.cat
 Carlos Leta - 1599255@uab.cat
+Albert Pumar - 1597973@uab.cat
 
 Xarxes Neuronals i Aprenentatge Profund
 Grau de Data Engineering, 
